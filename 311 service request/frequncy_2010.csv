@@ -1,0 +1,370 @@
+Service Request Type,day
+Sewer Service Line-Blocked,364
+Water Service Line-Turn Off,363
+Water Service Line-Turn On,361
+Watermain-Possible Break,360
+Sewer Service Line-Tree Root Reimbursement,356
+Water Service Line-Leaking,354
+Water Service Line-Low Pressure|| Low Flow,353
+Water Service Line-No Water,346
+Water Service Line-Damaged Water Service Box,319
+Water Service Line-Turn Off/Burst,300
+Hydrant-Leaking,294
+Sewer main-Backup,294
+Sewer Odour,285
+Water Service Line-Locate / Adjust service box,281
+Restoration Related,261
+Watermain Valve - Turn Off,248
+Watermain Valve - Turn On,239
+Complaint - Staff / Equipment / Attitude / Behaviour,227
+Water Meter-Leaking,227
+Water Valve-Leaking,221
+Pollution Spill Response,204
+Sewer Service Line-Cleanout Repair,196
+Water Quality-Discoloured (Rusty or dirty) Water,194
+Catch basin (Storm) - Overflowing,190
+Hydrant-Damage,186
+Catch basin (Storm) - Damage,185
+Locate-Emergency,182
+Illegal Dumping / Discharge,148
+Water Service Line-Check Water Service Box,139
+Maintenance Hole - Overflowing,126
+Maintenance Hole - Sunken / High,81
+Construction-Unsafe/Untidy Condition,73
+Maintenance Hole-Damage,72
+Hydrant-After Usage Test,63
+Locate-Non Scheduled (Mark and Fax),43
+Maintenance Hole-Missing Cover,35
+Locate-Scheduled,26
+Hydrant-Relocate Request,25
+Water Meter-Broken/Frozen,24
+Watercourses-Blocked/Flooding,20
+Water Meter-Investigate,14
+Watercourses-Outfalls/Inlets,13
+Locate-Re-Mark (Locate expires after 35 days),9
+Watercourses-Erosion/Washout,7
+Water Meter-Noisy,5
+Water Meter - Removal / Demolition,2
+Water Meter-Seasonal Installation,1
+Residential: Bin: Repair or Replace Wheel,0
+Residential: Bin: Wrong Delivery,0
+Residential: Bin: Missing,0
+Residential: Garbage Bin: Additional Large,0
+Residential: Bin: Repair or Replace Metal Bar,0
+Residential: Bin: Repair or Replace Lid,0
+Residential: Bin: Repair or Replace Body/Handle,0
+Residential: Garbage Bin: Additional Extra Large,0
+311 Staff Complaint,0
+Residential: Garbage Bin: Additional Medium,0
+Residential: Garbage Bin: Additional Small,0
+Residential: Garbage Bin: Exchange to Extra Large,0
+Residential: Garbage Bin: Exchange to Large,0
+Residential: Garbage Bin: Exchange to Medium,0
+Residential: Garbage Bin: Exchange to Small,0
+Residential: Garbage Bin: New Account Extra Large,0
+Residential: Garbage Bin: New Account Large,0
+Residential: Garbage Bin: New Account Medium,0
+Residential: Garbage Bin: New Account Small,0
+Residential: Recycle Bin: Additional Extra Large,0
+Residential: Recycle Bin: Additional Large,0
+Residential: Recycle Bin: Additional Medium,0
+Residential Permit Parking,0
+Res / Recycle Front&Side / Not Picked Up,0
+Residential Furniture / Not Picked Up,0
+Residential / Yard Waste / Not Picked Up,0
+Res / Org&Garbage Multiple Addresses / Not Picked Up,0
+Res / Org&Garbage Front&Side / Not Picked Up,0
+Res / Nite Yard Waste Multiple Addresses / Not Picked Up,0
+Res / Nite Recycle Multiple Addresses / Not Picked Up,0
+Res / Nite Recycle Front&Side / Not Picked Up,0
+Res / Nite Recycle / Not Picked Up,0
+Res / Nite Organic&Recycle / Not Picked Up,0
+Res / Nite Organic&Garbage / Not Picked Up,0
+Res / Nite Organic Front&Side / Not Picked Up,0
+Res / Nite Organic / Not Picked Up,0
+Res / Nite Org&Recycle Multiple Addresses / Not Picked Up,0
+Res / Nite Org&Recycle Front&Side / Not Picked Up,0
+Res / Nite Org&Garbage Multiple Addresses / Not Picked Up,0
+Res / Nite Org&Garbage Front&Side / Not Picked Up,0
+Res / Nite Garbage / Not Picked Up,0
+Res / Nite Garbage / Multiple Addresses / Not Picked Up,0
+Res / Garbage Front&Side / Not Picked Up,0
+Res / Garbage / Not Picked Up,0
+Res / Garbage / Multiple Addresses Not Picked Up,0
+Res / Org&Recycle Front&Side / Not Picked Up,0
+Res / Org&Recycle Multiple Addresses / Not Picked Up,0
+Res / Organic Container / Missing Damaged,0
+Res Above Comm / Nite Garbage / Not Picked Up,0
+Residential / XMAS Tree / Not Picked Up,0
+Residential / Nite Yard Waste / Not Picked Up,0
+Residential / Nite XMAS Tree / Not Picked Up,0
+Residential / Nite Furniture / Not Picked Up,0
+Reserved Lane,0
+Res Above Comm / Nite Yard Waste / Not Picked Up,0
+Res Above Comm / Nite XMAS Tree / Not Picked Up,0
+Res Above Comm / Nite Recycle / Not Picked Up,0
+Res / Yard Waste Multiple Addresses / Not Picked Up,0
+Res / Organic Front&Side / Not Picked Up,0
+Res / Yard Waste Cont. / Missing Damaged,0
+Residential: Recycle Bin: Exchange to Large,0
+Res / Recycle / Not Picked Up,0
+Res / Recycle / Multiple Addresses / Not Picked Up,0
+Res / Organic&Recycle / Not Picked Up,0
+Res / Organic&Garbage / Not Picked Up,0
+Res / Organic Green Bin / Not Picked Up,0
+Res / Organic Green Bin / Multiple Addresses / Not Picked Up,0
+Residential: Recycle Bin: Additional Small,0
+Road - Plough Damage,0
+Residential: Recycle Bin: Exchange to Medium,0
+Speed Watch Programme,0
+Storm Clean Up,0
+Stemming,0
+Staff Service Compliment,0
+Staff Service Complaint,0
+Staff Compliment,0
+Staff Complaint,0
+Speeding,0
+Speed Bumps in Laneway,0
+Sidewalk-Water Ponding,0
+Snow Removal - School Zone,0
+Snow Removal - General,0
+Signs,0
+Signal Timing Review/Vehicle Delays,0
+Signal Pre-emption,0
+Sign Maintenance,0
+Sight Line Obstruction,0
+Street furniture damaged,0
+Streetcar Platforms,0
+Student Crossing Issues,0
+Student Pick-up/Drop-off Area,0
+West Nile Virus - Standing Water / Roadway,0
+Waste,0
+Walkway-Weeds Need Cutting,0
+Walkway - damaged,0
+Walkway - Snow Clearing/ Salting required,0
+Tree Planting,0
+Transfer Station Comment,0
+Traffic Signal Maintenance,0
+Traffic Island-Grass Needs Cutting,0
+Traffic Island - Damaged,0
+Traffic Infiltration,0
+Traffic Calming Measures,0
+Time Limit or Excessive Duration Parking,0
+Temporary Signal Timings,0
+Taxicab Stand,0
+Sidewalks,0
+Sidewalk Icy|| Needs Sand/Salt,0
+Residential: Recycle Bin: Exchange to Small,0
+Road - Damaged,0
+Road Allowance,0
+Road - Sinking,0
+Road - Sanding / Salting Required,0
+Road - Pot hole,0
+Registration - Toronto Water,0
+Road - Gravel Roads/Construction,0
+Road - Graffiti Complaint,0
+Road - Cleaning/Debris,0
+Sidewalk - Snow Clearing,0
+Retaining Wall - Damage / Repair,0
+Respond to Locates Request,0
+Residential:Recycle Bin:Exchange to Extra Large,0
+Residential: Recycle Bin: New Account Small,0
+Residential: Recycle Bin: New Account Medium,0
+Residential: Recycle Bin: New Account Large,0
+Residential: Recycle Bin: New Account Extra Large,0
+Road Design,0
+Road Ploughing Required,0
+Road Water Ponding,0
+Road damaged on Expressway,0
+Sidewalk - Seniors Snow Clearing,0
+Sidewalk - Paraplegic Ramps,0
+Sidewalk - Graffiti Complaint,0
+Sidewalk - Damaged /Brick/Interlock,0
+Sidewalk - Damaged / Concrete,0
+Sidewalk - Cleaning,0
+Shoulder - Maintenance,0
+School-Related Warning Signs,0
+School Zone Safety Review,0
+School Bus Loading Zone,0
+Rooming House,0
+Roadway Utility Cut - Settlement,0
+Roadside Utility Cut - Settlement,0
+Roadside - Plough Damage,0
+Road-Winter Request/ Complaint,0
+Res / Above Comm / Organic Green Bin / Not Picked Up,0
+Pot hole on Expressway,0
+Registration - Elections Update,0
+Comm / Nite Recycle Blue Box / Not Picked Up,0
+Commercial / Recycle / Additional Container,0
+Commercial / Organic Cart / Not Picked Up,0
+Commercial / Organic / Additional Container,0
+Commercial / Nite Recycle Cart / Not Picked Up,0
+Commercial / Garbage Yellow Bag / Not Picked Up,0
+Comment / Suggestion,0
+Comm / Organic Container / Missing Damaged,0
+Comm / Nite Recycle Cardboard Not Picked Up,0
+Comm / Nite Organic Cart / Not Picked Up,0
+Commercial / Recycle Cart / Missing Damaged,0
+Comm / Nite Garbage Yellow Bag / Not Picked Up,0
+Catch basin on Expressway requires cleaning,0
+Catch basin on Expressway damaged,0
+Catch basin Maintenance and Repair,0
+Catch Basin -Cover Missing / Damaged / Loose,0
+Catch Basin - Debris / Litter,0
+Catch Basin - Damaged Maintenance Requested,0
+Catch Basin - Blocked / Flooding,0
+Commercial / Recycle Blue Box / Not Picked Up,0
+Commercial / Recycle Cart / Not Picked Up,0
+Bus Stop Icy Needs Sand/Salt,0
+Disabled Persons' Parking Space,0
+Expressway requires cleaning.,0
+Expressway Guide Rail Damaged,0
+Expressway Fence - Damaged,0
+Employee Comment,0
+Election Signs,0
+Driveway-Blocked By Windrow,0
+Driveway - Damaged / Ponding,0
+Ditch Maintenance Requested,0
+Dead Animal On Expressway,0
+Community Traffic Study,0
+Curb - Damaged,0
+Curb - Adjust Height (Too High/Low),0
+Culverts-Damaged / Maintenance Requested,0
+Culverts - Blocked,0
+Corner Parking Prohibition,0
+Complaint regarding Contractor,0
+Complaint / Property Damaged,0
+Complaint,0
+Bus Stops Snow Clearing Required,0
+Bridge Icy Needs Sand/Salt,0
+Fence - Damaged,0
+ABCD's / Recycle / Additional Container,0
+All / Hazardous Waste / Not Picked Up,0
+Adequate Heat,0
+Accessibility Complaint,0
+ABCD's / Recycle Rear-Bin / Not Picked Up,0
+ABCD's / Recycle Front-End / Not Picked Up,0
+ABCD's / Recycle Container / Missing Damaged,0
+ABCD's / Recycle Cart / Not Picked Up,0
+ABCD's / Recycle Blue Box / Not Picked Up,0
+ABCD's / Nite Recycle Cart / Not Picked Up,0
+All / White Goods / Not Picked Up,0
+ABCD's / Nite Recycle Blue Box Not Picked Up,0
+ABCD's / Nite Garbage Rear-Bin / Not Picked Up,0
+ABCD's / Nite Garbage Pile / Not Picked Up,0
+ABCD's / Garbage Rear-Bin / Not Picked Up,0
+ABCD's / Garbage Pile / Not Picked Up,0
+ABCD's / Garbage Front-End / Not Picked Up,0
+ABCD's / Garbage Container / Missing Damaged,0
+ABCD's / Garbage Cart / Not Picked Up,0
+All / Hazardous Waste / Pick Up Request,0
+All / White Goods / Pick Up Request,0
+Bridge - Surface Repair,0
+Boulevard - Pick-Up Shopping Carts,0
+Bridge - Graffiti Complaint,0
+Bridge - Debris / Litter,0
+Bridge - Damaged Structure,0
+Boulevards-Grass Cutting,0
+Boulevards - Weed Removal,0
+Boulevards - Snow Piled Too High / Too Much,0
+Boulevards - Damaged Asphalt,0
+Boulevard - Plough Damage,0
+Boulevard - Leaf Pick-up Mechanical,0
+All-Way Stop Sign Controls,0
+Bollard - Damaged,0
+Blocked Access By Parking,0
+Block Pruning,0
+Bin Investigation Request,0
+Bicycle Signals,0
+Bees/Wasp,0
+Appliance (Emergency),0
+Alternate Side Parking,0
+Fence,0
+Flashing Beacon Maintenance,0
+Ravine Inspection,0
+Multi-Res / Recycle Cont. / Missing Damaged,0
+One-way Streets,0
+Noise,0
+New Traffic Control Signal Request,0
+New Pedestrian Crossover,0
+Multi-Res / Yard Waste / Not Picked Up,0
+Multi-Res / XMAS Tree / Not Picked Up,0
+Multi-Res / Recycle Rear-Bin / Not Picked Up,0
+Multi-Res / Recycle Front-End / Not Picked Up,0
+Multi-Res / Recycle Cart / Not Picked Up,0
+Operator / Operations Complaint,0
+Multi-Res / Recycle / Additional Container,0
+Multi-Res / Organic Front-End / Not Picked Up,0
+Multi-Res / Nite XMAS Tree / Not Picked Up,0
+Multi-Res / Nite Recycle Cart / Not Picked Up,0
+Multi-Res / Nite Garbage Rear-Bin / Not Picked Up,0
+Multi-Res / Nite Garbage Pile / Not Picked Up,0
+Multi-Res / Nite Furniture Pile / Not Picked Up,0
+Multi-Res / Garbage Rear-Bin / Not Picked Up,0
+Operational Comment or Complaint,0
+Operator / Operations Compliment,0
+Multi-Res / Garbage Front-End / Not Picked Up,0
+Planting 11 Plus Trees FNEM,0
+RESCU Maintenance,0
+Publication Request - Urban Forestry,0
+Publication Request - Solid Waste,0
+Publication Request,0
+Public Transit Loading Zone,0
+Property Standards,0
+Private Tree Inspection,0
+311 Staff Compliment,0
+Pit Cover/Paver Maintenance,0
+PXO Maintenance,0
+Permit Inspection,0
+Pedestrian Refuge Island,0
+Pedestrian Issues/Timing/Delays,0
+Pedestrian Crossover Operation,0
+Pedestrian Crossing Protection,0
+Parks Ravine Safety Mtc FNEM,0
+Parking in a Public Lane,0
+Parking Meters/Machines,0
+Multi-Res / Garbage Pile / Not Picked Up,0
+Multi-Res / Garbage Cont. / Missing Damaged,0
+General Parking Regulations,0
+Investigate Regulatory Signs,0
+Left/Right Turn Signal Priority Features,0
+Laneway - Surface Damage,0
+Laneway - Snow Not Ploughed,0
+Laneway - Salting / Sanding / Salt,0
+Lane Designation,0
+Investigate Warning Signs,0
+Investigate Vehicles Leaving Roadway,0
+Investigate Temporary Condition Signs,0
+Investigate Pavement Markings,0
+Litter / Bin / Litter Bin Installation,0
+Investigate Guide and Information Signs,0
+Intersection Safety Review,0
+IPM Inspection,0
+Heavy Trucks,0
+Guardrail - Damaged,0
+Graffiti,0
+General Tree Maintenance,0
+General Pruning,0
+Litter / Bin / Graffiti on Bin,0
+Litter / Bin / Overflow or Not Picked Up,0
+Multi-Res / Garbage Cart / Not Picked Up,0
+Missed Leaf Collection,0
+Multi-Res / Garbage / Additional Container,0
+Multi-Res / Furniture Pile / Not Picked Up,0
+Multi-Res / Ewaste / PickUp / Request,0
+Multi-Res / Ewaste / Not Picked Up,0
+Mulching,0
+Mode of Control of TCS,0
+Missing/Faded Pavement Markings,0
+Missing/Damaged Signs,0
+Maintenance Holes Lid Loose/Missing,0
+Litter / Bin / Reinstall|| Replace Missing,0
+Maintenance Holes -Damage / Repair,0
+Long Grass and Weeds,0
+Litter / Street Furniture& Poster / Removal,0
+Litter / Special Event / Pick Up Request,0
+Litter / Sidewalk & Blvd / Pick Up Request,0
+Litter / Laneway / Clean Up,0
+Litter / Bin / Removal,0
+Litter / Bin / Relocate,0
+Zoning,0

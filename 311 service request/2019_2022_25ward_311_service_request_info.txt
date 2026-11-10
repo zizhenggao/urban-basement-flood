@@ -1,0 +1,101 @@
+year,Ward,catch basin blocked and overflow times,manhole overflow times,road water overflow times,sewer line blocked and backup times,water line leaking times,catch basin blocked and overflow months,manhole overflow months,road water overflow months,sewer line blocked and backup months,water line leaking months
+2019,Beaches-East York (19),447,8,58,550,77,12,6,12,12,12
+2019,Davenport (09),421,5,40,385,77,12,2,11,12,12
+2019,Don Valley East (16),156,8,26,123,41,12,7,8,12,9
+2019,Don Valley North (17),201,6,28,127,27,12,4,10,12,10
+2019,Don Valley West (15),341,6,45,245,89,12,5,11,12,12
+2019,Eglinton-Lawrence (08),441,9,74,399,89,12,6,12,12,12
+2019,Etobicoke Centre (02),376,6,72,328,74,12,4,12,12,12
+2019,Etobicoke North (01),196,13,40,263,43,12,8,11,12,10
+2019,Etobicoke-Lakeshore (03),460,14,94,574,72,12,6,12,12,12
+2019,Humber River-Black Creek (07),164,9,37,269,37,12,7,10,12,12
+2019,Parkdale-High Park (04),484,10,39,401,55,12,7,11,12,12
+2019,Scarborough Centre (21),245,6,59,388,30,12,5,12,12,10
+2019,Scarborough North (23),198,4,28,99,25,12,3,11,12,11
+2019,Scarborough Southwest (20),348,8,50,470,71,12,7,11,12,12
+2019,Scarborough-Agincourt (22),175,3,26,108,23,12,3,10,12,11
+2019,Scarborough-Guildwood (24),167,6,35,224,39,12,4,12,12,12
+2019,Scarborough-Rouge Park (25),276,7,35,172,25,12,5,12,12,9
+2019,Spadina-Fort York (10),282,11,42,120,57,12,6,12,12,12
+2019,Toronto Centre (13),239,2,31,95,60,12,2,10,12,12
+2019,Toronto-Danforth (14),504,12,80,594,101,12,7,12,12,12
+2019,Toronto-St. Paul's (12),337,20,50,263,53,12,7,11,12,12
+2019,University-Rosedale (11),442,14,49,264,78,12,7,10,12,12
+2019,Willowdale (18),181,4,30,215,50,12,4,10,12,12
+2019,York Centre (06),225,5,31,287,43,12,4,9,12,12
+2019,York South-Weston (05),394,13,43,566,67,12,9,12,12,12
+2020,Beaches-East York (19),241,4,33,509,64,12,3,11,12,12
+2020,Davenport (09),290,4,20,386,90,12,3,9,12,12
+2020,Don Valley East (16),113,2,10,118,27,11,2,5,12,10
+2020,Don Valley North (17),111,3,18,123,30,12,2,9,12,12
+2020,Don Valley West (15),222,9,12,268,64,12,6,6,12,12
+2020,Eglinton-Lawrence (08),328,9,36,427,77,12,6,11,12,12
+2020,Etobicoke Centre (02),229,4,30,276,52,12,3,10,12,11
+2020,Etobicoke North (01),84,10,20,231,34,12,5,7,12,10
+2020,Etobicoke-Lakeshore (03),288,10,46,547,80,12,6,11,12,12
+2020,Humber River-Black Creek (07),125,1,17,244,44,12,1,8,12,12
+2020,Parkdale-High Park (04),272,7,15,349,50,12,4,8,12,12
+2020,Scarborough Centre (21),128,13,19,344,38,12,7,8,12,11
+2020,Scarborough North (23),137,1,14,76,24,12,1,8,12,9
+2020,Scarborough Southwest (20),190,6,13,400,33,12,5,10,12,11
+2020,Scarborough-Agincourt (22),125,0,13,77,24,12,0,8,12,11
+2020,Scarborough-Guildwood (24),90,3,17,212,30,12,3,7,12,11
+2020,Scarborough-Rouge Park (25),207,6,22,187,31,12,4,10,12,10
+2020,Spadina-Fort York (10),167,9,23,70,27,12,8,9,12,10
+2020,Toronto Centre (13),115,9,11,86,39,11,6,6,12,11
+2020,Toronto-Danforth (14),219,7,34,543,75,12,4,9,12,12
+2020,Toronto-St. Paul's (12),263,15,24,259,50,12,6,8,12,12
+2020,University-Rosedale (11),218,10,22,277,46,12,5,10,12,11
+2020,Willowdale (18),128,2,10,236,49,12,2,6,12,12
+2020,York Centre (06),136,8,19,275,53,12,6,8,12,12
+2020,York South-Weston (05),268,10,34,657,63,12,5,11,12,12
+2021,Beaches-East York (19),146,10,23,441,37,10,6,9,10,9
+2021,Davenport (09),238,1,18,304,50,10,1,7,10,10
+2021,Don Valley East (16),78,4,8,122,26,10,3,3,10,8
+2021,Don Valley North (17),100,3,15,98,28,10,3,8,10,8
+2021,Don Valley West (15),153,4,22,227,52,10,3,8,10,10
+2021,Eglinton-Lawrence (08),175,2,21,327,62,10,2,6,10,10
+2021,Etobicoke Centre (02),162,6,27,241,52,10,6,8,10,10
+2021,Etobicoke North (01),60,5,21,195,39,10,4,9,10,10
+2021,Etobicoke-Lakeshore (03),237,7,47,446,69,10,5,9,10,9
+2021,Humber River-Black Creek (07),77,2,18,174,37,10,2,8,10,9
+2021,Parkdale-High Park (04),199,7,26,312,33,10,4,8,10,10
+2021,Scarborough Centre (21),130,3,22,277,40,10,3,7,10,10
+2021,Scarborough North (23),77,0,16,73,14,10,0,8,10,7
+2021,Scarborough Southwest (20),153,1,17,393,48,10,1,9,10,10
+2021,Scarborough-Agincourt (22),87,1,10,71,15,10,1,5,10,9
+2021,Scarborough-Guildwood (24),86,4,17,232,28,10,4,6,10,10
+2021,Scarborough-Rouge Park (25),130,4,20,136,25,10,4,8,10,9
+2021,Spadina-Fort York (10),116,8,9,79,37,10,5,7,10,10
+2021,Toronto Centre (13),106,4,11,71,29,9,4,5,10,10
+2021,Toronto-Danforth (14),182,7,28,489,67,10,6,9,10,10
+2021,Toronto-St. Paul's (12),218,6,23,243,34,10,3,7,10,9
+2021,University-Rosedale (11),194,6,16,190,47,10,5,5,10,10
+2021,Willowdale (18),74,4,12,175,39,10,3,7,10,10
+2021,York Centre (06),112,8,12,302,36,10,5,7,10,10
+2021,York South-Weston (05),198,5,27,386,42,10,4,8,10,10
+2022,Beaches-East York (19),12,0,2,21,7,3,0,2,6,6
+2022,Davenport (09),11,1,1,11,4,2,1,1,6,2
+2022,Don Valley East (16),6,0,1,3,1,3,0,1,2,1
+2022,Don Valley North (17),5,0,0,8,2,2,0,0,3,2
+2022,Don Valley West (15),14,0,1,10,7,3,0,1,4,5
+2022,Eglinton-Lawrence (08),10,0,3,8,4,3,0,2,7,4
+2022,Etobicoke Centre (02),11,1,1,6,8,2,1,1,3,6
+2022,Etobicoke North (01),4,0,0,6,10,2,0,0,4,5
+2022,Etobicoke-Lakeshore (03),14,1,3,17,10,3,1,2,7,6
+2022,Humber River-Black Creek (07),2,0,0,6,2,2,0,0,5,2
+2022,Parkdale-High Park (04),15,4,0,15,7,4,4,0,7,5
+2022,Scarborough Centre (21),5,1,0,11,5,2,1,0,6,4
+2022,Scarborough North (23),5,0,0,4,0,1,0,0,2,0
+2022,Scarborough Southwest (20),12,0,3,9,5,3,0,2,5,5
+2022,Scarborough-Agincourt (22),5,0,1,3,1,3,0,1,3,1
+2022,Scarborough-Guildwood (24),10,1,2,7,3,3,1,1,4,3
+2022,Scarborough-Rouge Park (25),7,0,0,9,2,3,0,0,6,1
+2022,Spadina-Fort York (10),14,0,0,3,2,5,0,0,3,2
+2022,Toronto Centre (13),11,1,2,4,0,3,1,2,2,0
+2022,Toronto-Danforth (14),14,0,3,15,3,3,0,2,9,3
+2022,Toronto-St. Paul's (12),19,2,2,9,3,5,1,2,5,2
+2022,University-Rosedale (11),23,2,1,9,10,6,2,1,7,4
+2022,Willowdale (18),10,0,2,7,2,4,0,2,4,2
+2022,York Centre (06),7,1,3,7,5,2,1,2,4,5
+2022,York South-Weston (05),8,0,0,22,2,3,0,0,8,2
