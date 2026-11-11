@@ -390,7 +390,8 @@ def format_ward_brief(selected: pd.DataFrame, basis: str) -> str:
         lines.append(
             f"Ward {int(row.ward_id)} ({row.ward_name}): "
             f"priority rank {int(row.priority_rank)} of 25; "
-            f"sewage-failure rank {int(row.shown_failure_rank)} of 25; "
+            f"sewage-failure rank {int(row.shown_failure_rank)} of 25 "
+            f"(1 means the highest sewage-failure pressure, 25 the lowest); "
             f"flood-report rank {int(row.low_report_rank)} of 25 "
             f"(1 means the fewest basement-flood requests per eligible home); "
             f"{row.subsidy_participation * 100:.1f}% of eligible homes already have a subsidized flood device; "
