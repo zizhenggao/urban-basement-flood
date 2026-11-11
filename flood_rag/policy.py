@@ -1,9 +1,9 @@
-"""Read the three BFPP PDFs locally.
+"""Read the three BFPP PDFs locally and search them with the ward index.
 
 Subsidy counts are parsed from each ward page of the profile summary.
-A TF-IDF index answers follow-up questions from those pages. An optional
-local Ollama model can turn the retrieved pages into a short paragraph.
-Nothing here calls a paid API.
+Ask-time search uses one TF-IDF index over those pages and over plain-language
+passages from the ward index. An optional local Ollama model writes a short
+paragraph from the passages search already found. Nothing here calls a paid API.
 """
 
 from __future__ import annotations
@@ -199,19 +199,32 @@ class PolicyIndex:
         self.matrix = self.vectorizer.fit_transform(c.text for c in chunks)
 
     def search(self, query: str, k: int = 4) -> list[tuple[Chunk, float]]:
+        """Top policy pages and top ward-index passages for one question.
+
+        Both sources share one TF-IDF space. Each side keeps its own top k so
+        a policy-heavy question still returns ward rows, and the reverse.
+        """
         mentioned = {
             int(n)
             for n in re.findall(r"ward\s*(\d{1,2})", query, flags=re.I)
             if 1 <= int(n) <= 25
         }
         q = self.vectorizer.transform([query])
-        scores = cosine_similarity(q, self.matrix).ravel()
+        scores = cosine_similarity(q, self.matrix).ravel().copy()
         if mentioned:
             for i, chunk in enumerate(self.chunks):
                 if chunk.ward_id in mentioned:
                     scores[i] += 1.0
-        order = scores.argsort()[::-1][:k]
-        return [(self.chunks[i], float(scores[i])) for i in order if scores[i] > 0]
+        policy = [i for i, chunk in enumerate(self.chunks) if chunk.source != "ward index"]
+        wards = [i for i, chunk in enumerate(self.chunks) if chunk.source == "ward index"]
+        picked = self._top(policy, scores, k) + self._top(wards, scores, k)
+        picked.sort(key=lambda i: scores[i], reverse=True)
+        return [(self.chunks[i], float(scores[i])) for i in picked]
+
+    @staticmethod
+    def _top(idxs: list[int], scores, k: int) -> list[int]:
+        ordered = sorted(idxs, key=lambda i: scores[i], reverse=True)
+        return [i for i in ordered if scores[i] > 0][:k]
 
     def pages_for_wards(self, query: str, ward_ids: list[int], limit: int = 3) -> list[tuple[Chunk, float]]:
         """Best policy page for each priority ward, so study-area text is available."""
@@ -224,7 +237,11 @@ class PolicyIndex:
         for ward_id in ward_ids:
             if len(found) >= limit:
                 break
-            candidates = [i for i, chunk in enumerate(self.chunks) if chunk.ward_id == ward_id]
+            candidates = [
+                i
+                for i, chunk in enumerate(self.chunks)
+                if chunk.ward_id == ward_id and chunk.source != "ward index"
+            ]
             if not candidates:
                 continue
             best = max(candidates, key=lambda i: (scores[i], -self.chunks[i].page))
@@ -241,23 +258,35 @@ def ollama_answer(
     question: str,
     hits: list[tuple[Chunk, float]],
     model: str,
-    ward_brief: str,
-) -> str | None:
-    """Return a short answer from a local Ollama server, or None if it is down."""
-    context = "\n\n".join(
-        f"[{hit.source} p.{hit.page}]\n{hit.text[:1500]}" for hit, _ in hits
-    )
+    ward_brief: str = "",
+) -> tuple[str | None, str | None]:
+    """Generate from the retrieved excerpts. Returns (answer, error)."""
+    def _block(hit: Chunk) -> str:
+        if hit.source == "ward index":
+            label = "ward index ranking" if hit.ward_id is None else f"ward index ward {hit.ward_id}"
+        else:
+            label = f"{hit.source} p.{hit.page}"
+        return f"[{label}]\n{hit.text[:1600]}"
+
+    rankings = [hit for hit, _ in hits if hit.source == "ward index" and hit.ward_id is None]
+    ward_rows = [hit for hit, _ in hits if hit.source == "ward index" and hit.ward_id is not None]
+    policy = [hit for hit, _ in hits if hit.source != "ward index"]
+    blocks = [_block(hit) for hit in rankings + ward_rows + policy]
     prompt = (
-        "You advise a Toronto city planner on where to do basement-flood outreach. "
-        "Use the ward index for which wards to contact and why. "
-        "The priority rank is already decided; do not invent or reorder it. "
-        "Use the policy excerpts only for what the program offers, who is eligible, "
-        "and which study area applies. "
-        "If a number is in neither source, say it is not in the sources. "
+        "You advise a Toronto city planner on basement-flood outreach. "
+        "Excerpts come from two retrieved sources: the ward index, and Basement Flooding Protection Program pages. "
+        "If a ward index ranking excerpt is present, name the wards in that order. "
+        "Do not replace that list with other wards. "
+        "Use individual ward excerpts only to explain the wards already named in the ranking. "
+        "Use policy excerpts for what the program offers, who is eligible, and which study area applies. "
+        "Repeat each rank in the direction the excerpt states. "
+        "If an excerpt says residents rarely report basement floods, do not call those reports high. "
+        "If a number is not in the excerpts, say it is not in the excerpts. "
         "Write in plain language.\n\n"
-        f"Ward index:\n{ward_brief}\n\n"
-        f"Policy excerpts:\n{context}\n\n"
-        f"Question: {question}\nAnswer:"
+        + (f"Ward brief:\n{ward_brief}\n\n" if ward_brief else "")
+        + "Excerpts:\n"
+        + "\n\n".join(blocks)
+        + f"\n\nQuestion: {question}\nAnswer:"
     )
     body = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode()
     req = urllib.request.Request(
@@ -266,11 +295,20 @@ def ollama_answer(
         headers={"Content-Type": "application/json"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=120) as resp:
+        with urllib.request.urlopen(req, timeout=180) as resp:
             payload = json.loads(resp.read().decode())
+    except urllib.error.HTTPError as exc:
+        detail = exc.read().decode(errors="replace")[:240]
+        return None, f"Ollama returned {exc.code}: {detail}"
     except (urllib.error.URLError, TimeoutError, ConnectionError):
-        return None
-    return payload.get("response", "").strip() or None
+        return None, (
+            "Ollama is not running. Start it with `ollama serve`, then "
+            f"`ollama pull {model}`."
+        )
+    text = payload.get("response", "").strip()
+    if not text:
+        return None, "Ollama returned an empty answer."
+    return text, None
 
 
 def save_chunks(chunks: list[Chunk]) -> None:

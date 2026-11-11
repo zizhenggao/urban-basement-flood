@@ -8,8 +8,11 @@ Protection subsidy uptake as of the June 2025 ward profiles.
 
 Windows
 -------
-- 311 complaint rates: 2019-2021 only. The local 2022 extract collapses to a
-  few calls per ward, so it is treated as a partial year and left out.
+- 311 complaint rates in the score: 2019-2021 mean only. The local 2022 extract
+  collapses to a few calls per ward, so it is a partial year. Yearly counts and
+  rates for 2019-2022 are kept as attributes and are not folded into the mean.
+- Residential water use in the score: 2019-2022 mean. Each year's value is
+  also kept as an attribute.
 - Basement-flood service requests: 2019-2022 (full years in the City file).
   2023 in that file is January-June only.
 - Sewer structure for the historical score: 2021 snapshot.
@@ -43,6 +46,10 @@ STRUCTURAL_COLS = [
     "avg_residential_usage",
 ]
 COMPLAINT_COLS = ["backup_per_1000", "manhole_per_1000"]
+CALL_SCORE_YEARS = (2019, 2020, 2021)
+CALL_SERIES_YEARS = (2019, 2020, 2021, 2022)
+WATER_YEARS = (2019, 2020, 2021, 2022)
+CALL_SERIES_COLS = ("sewer_backup", "manhole_overflow", "catch_basin")
 
 
 def _z(series: pd.Series) -> pd.Series:
@@ -62,7 +69,7 @@ def _load_311() -> pd.DataFrame:
             "catch basin blocked and overflow times": "catch_basin",
         }
     )
-    return frame.loc[frame["year"].between(2019, 2021), [
+    return frame.loc[frame["year"].between(2019, 2022), [
         "year", "ward_id", "sewer_backup", "manhole_overflow", "catch_basin"
     ]]
 
@@ -145,10 +152,25 @@ def _load_water() -> pd.DataFrame:
         )
         frames.append(frame[["ward_id", "year", "avg_residential_usage"]])
     water = pd.concat(frames, ignore_index=True)
-    water = water[water["ward_id"].between(1, 25)]
-    return (
-        water.groupby("ward_id", as_index=False)["avg_residential_usage"]
-        .mean()
+    return water[water["ward_id"].between(1, 25)]
+
+
+def _yearly_wide(frame: pd.DataFrame, value: str, years: tuple[int, ...]) -> pd.DataFrame:
+    """One column per year. The score still uses the mean of these values."""
+    subset = frame.loc[frame["year"].isin(years), ["ward_id", "year", value]]
+    wide = subset.pivot(index="ward_id", columns="year", values=value)
+    missing = [year for year in years if year not in wide.columns]
+    if missing:
+        raise RuntimeError(f"{value} is missing years {missing}")
+    wide = wide.loc[:, list(years)]
+    wide.columns = [f"{value}_{year}" for year in years]
+    return wide.reset_index()
+
+
+def _year_bits(row, column: str, years: tuple[int, ...], digits: int) -> str:
+    return ", ".join(
+        f"{year} {float(getattr(row, f'{column}_{year}')):.{digits}f}"
+        for year in years
     )
 
 
@@ -161,27 +183,41 @@ def build_scores() -> pd.DataFrame:
     names = _load_sewer(2021)[["ward_id", "ward_name"]]
     sewer_2021 = _load_sewer(2021)
     sewer_2023 = _load_sewer(2023).drop(columns=["ward_name"])
+    calls = _load_311()
     complaints = (
-        _load_311()
+        calls.loc[calls["year"].isin(CALL_SCORE_YEARS)]
         .groupby("ward_id", as_index=False)[["sewer_backup", "manhole_overflow", "catch_basin"]]
         .mean()
     )
+    call_years = complaints[["ward_id"]]
+    for column in CALL_SERIES_COLS:
+        call_years = call_years.merge(_yearly_wide(calls, column, CALL_SERIES_YEARS), on="ward_id")
     floods = _load_floods()
     trees = _load_trees()
-    water = _load_water()
+    water_long = _load_water()
+    water = (
+        water_long.groupby("ward_id", as_index=False)["avg_residential_usage"]
+        .mean()
+    )
+    water_years = _yearly_wide(water_long, "avg_residential_usage", WATER_YEARS)
     stock = load_subsidy_stock()
 
     base = (
         names.merge(sewer_2021.drop(columns=["ward_name"]), on="ward_id")
         .merge(complaints, on="ward_id")
+        .merge(call_years, on="ward_id")
         .merge(floods, on="ward_id")
         .merge(trees, on="ward_id")
         .merge(water, on="ward_id")
+        .merge(water_years, on="ward_id")
         .merge(stock, on="ward_id", how="left")
     )
     base["eligible_homes"] = base["properties_with_fpd"] + base["properties_without_fpd"]
     base["backup_per_1000"] = base["sewer_backup"] / base["eligible_homes"] * 1000
     base["manhole_per_1000"] = base["manhole_overflow"] / base["eligible_homes"] * 1000
+    for year in CALL_SERIES_YEARS:
+        base[f"backup_per_1000_{year}"] = base[f"sewer_backup_{year}"] / base["eligible_homes"] * 1000
+        base[f"manhole_per_1000_{year}"] = base[f"manhole_overflow_{year}"] / base["eligible_homes"] * 1000
     base["flood_per_1000"] = base["flood_per_year"] / base["eligible_homes"] * 1000
     base["subsidy_participation"] = base["properties_with_fpd"] / base["eligible_homes"]
 
@@ -258,6 +294,169 @@ def build_scores() -> pd.DataFrame:
     return out.sort_values(["gap_rank", "ward_id"]).reset_index(drop=True)
 
 
+def _ward_text(row) -> str:
+    """One searchable passage. Strong ranks are named so a question can find them."""
+    failure = int(row.failure_rank)
+    report = int(row.low_report_rank)
+    gap = int(row.gap_rank)
+    intake = int(row.low_intake_rank)
+    pct = float(row.subsidy_participation) * 100
+    reports = int(row.flood_reports_2019_2022)
+    parts = [f"Ward {int(row.ward_id)} {row.ward_name}, from the ward index."]
+    if failure <= 5:
+        parts.append(
+            f"Sewer backups are high. Sewage-failure pressure is among the highest in the city, rank {failure} of 25. "
+            "That pressure comes from older or combined pipe, tree roots over the sewer, "
+            "residential water use, and sewer-backup and manhole-overflow calls."
+        )
+    elif failure <= 10:
+        parts.append(
+            f"Sewer backups are relatively high. Sewage-failure rank {failure} of 25."
+        )
+    elif failure >= 20:
+        parts.append(
+            f"Sewage-failure pressure is among the lowest in the city, rank {failure} of 25."
+        )
+    else:
+        parts.append(f"Sewage-failure pressure is near the middle of the city, rank {failure} of 25.")
+    details = []
+    if float(row.pct_old_pipe) >= 0.4:
+        details.append("a large share of the pipe is old")
+    if float(row.pct_combined_sewer) >= 0.25:
+        details.append("a large share of the sewer is combined")
+    if float(row.pipe_share_in_root_zone) >= 0.1:
+        details.append("tree roots cover a noticeable share of the pipe")
+    if float(row.fd_density) > 0:
+        details.append("foundation drains are connected")
+    if details:
+        parts.append("In this ward, " + ", ".join(details) + ".")
+    parts.append(
+        f"There were about {float(row.backup_per_1000):.1f} sewer-backup calls "
+        "per 1,000 eligible homes in 2019-2021, the mean of "
+        f"{_year_bits(row, 'backup_per_1000', CALL_SCORE_YEARS, 1)}. "
+        f"2022 is a partial extract, {float(row.backup_per_1000_2022):.1f} per 1,000, and is not in that mean."
+    )
+    parts.append(
+        "Manhole-overflow calls per 1,000 eligible homes by year, same window: "
+        f"{_year_bits(row, 'manhole_per_1000', CALL_SCORE_YEARS, 2)}. "
+        f"The 2022 partial extract is {float(row.manhole_per_1000_2022):.2f} per 1,000."
+    )
+    parts.append(
+        "Average residential water use by year: "
+        f"{_year_bits(row, 'avg_residential_usage', WATER_YEARS, 1)}. "
+        "The score uses the mean of those four years."
+    )
+    if report <= 5:
+        parts.append(
+            "Residents rarely report basement floods compared with other wards. "
+            f"Flood-report rank {report} of 25, where 1 means the fewest basement-flood "
+            f"requests per eligible home. The ward recorded {reports} basement-flood requests from 2019 to 2022."
+        )
+    elif report >= 20:
+        parts.append(
+            "Residents report basement floods more often than most wards. "
+            f"Flood-report rank {report} of 25. The ward recorded {reports} basement-flood requests from 2019 to 2022."
+        )
+    else:
+        parts.append(
+            f"Basement-flood reporting is mid-range, flood-report rank {report} of 25. "
+            f"The ward recorded {reports} basement-flood requests from 2019 to 2022."
+        )
+    without = int(row.properties_without_fpd)
+    with_device = int(row.properties_with_fpd)
+    if pct < 5:
+        parts.append(
+            f"Very few eligible homes already have a subsidized flood device, {pct:.1f} percent. "
+            f"{without} homes are still without a device and {with_device} already have one. "
+            "Subsidy uptake is among the lowest."
+        )
+    elif pct < 12:
+        parts.append(
+            f"Subsidy uptake is low: {pct:.1f} percent of eligible homes already have a subsidized flood device. "
+            f"{without} homes are still without one."
+        )
+    else:
+        parts.append(
+            f"{pct:.1f} percent of eligible homes already have a subsidized flood device. "
+            f"{without} homes are still without one and {with_device} already have one."
+        )
+    if intake <= 5:
+        parts.append(
+            f"This ward is a strong outreach candidate. Outreach rank {intake} of 25, "
+            "combining sewage-failure pressure, rare flood reporting, and low device uptake."
+        )
+    elif intake <= 10:
+        parts.append(
+            f"Outreach rank {intake} of 25. It is a plausible place for more subsidy outreach."
+        )
+    else:
+        parts.append(
+            f"Outreach rank {intake} of 25, so it is not at the front of the citywide outreach list."
+        )
+    if gap <= 5:
+        parts.append(
+            f"The gap between sewage-failure pressure and basement-flood reporting is among the widest, "
+            f"gap rank {gap} of 25."
+        )
+    parts.append(
+        f"On the 2025 pipe update, sewage-failure rank is {int(row.failure_rank_2025)} of 25 "
+        f"and gap rank is {int(row.gap_rank_2025)} of 25. That update ages the pipes; it is not a storm forecast."
+    )
+    return " ".join(parts)
+
+
+def _ranking_passage(scores: pd.DataFrame, column: str, title: str, gloss: str, limit: int = 8) -> dict:
+    ordered = scores.sort_values([column, "ward_id"]).head(limit)
+    lines = [title, gloss]
+    for _, row in ordered.iterrows():
+        lines.append(f"{int(row[column])}. Ward {int(row.ward_id)} {row.ward_name}.")
+    return {"ward_id": None, "page": 0, "text": "\n".join(lines)}
+
+
+def ward_passages(scores: pd.DataFrame) -> list[dict]:
+    """Plain-language ward index documents for the same search as the PDFs."""
+    passages = [
+        {"ward_id": int(row.ward_id), "page": int(row.ward_id), "text": _ward_text(row)}
+        for _, row in scores.sort_values("ward_id").iterrows()
+    ]
+    passages.append(
+        _ranking_passage(
+            scores,
+            "low_intake_rank",
+            "Ward index outreach ranking.",
+            "Use this list to decide which wards to outreach when sewer backups are high, "
+            "few residents report basement floods, and few homes already have a subsidized flood device. "
+            "Rank 1 is the first ward to contact.",
+        )
+    )
+    passages.append(
+        _ranking_passage(
+            scores,
+            "failure_rank",
+            "Ward index sewage-failure ranking.",
+            "Rank 1 has the highest sewage-failure pressure from older or combined pipe, "
+            "tree roots over the sewer, residential water use, and sewer-backup calls.",
+        )
+    )
+    passages.append(
+        _ranking_passage(
+            scores,
+            "low_report_rank",
+            "Ward index basement-flood reporting ranking.",
+            "Rank 1 has the fewest basement-flood reports per eligible home, 2019 to 2022.",
+        )
+    )
+    passages.append(
+        _ranking_passage(
+            scores,
+            "gap_rank",
+            "Ward index gap ranking.",
+            "Rank 1 has the widest gap between high sewage-failure pressure and few basement-flood reports.",
+        )
+    )
+    return passages
+
+
 _FAILURE = re.compile(
     r"pipe|sewer|sewage|backup|combined|root|manhole|failure", re.I
 )
@@ -272,12 +471,7 @@ _OUTREACH = re.compile(
 
 
 def _focus(question: str) -> tuple[str, bool]:
-    """Return which rank answers the question, and whether to use the 2025 update.
-
-    Outreach wording uses the combined outreach rank. Sewage pressure together
-    with low reporting, and no subsidy mention, uses the gap rank. Sewage
-    pressure alone uses the failure rank.
-    """
+    """Return which rank answers the question, and whether to use the 2025 update."""
     failure = bool(_FAILURE.search(question))
     reporting = bool(_REPORTING.search(question))
     outreach = bool(_OUTREACH.search(question))
@@ -309,11 +503,7 @@ def _mentioned_ward_ids(scores: pd.DataFrame, question: str) -> set[int]:
 
 
 def select_wards(scores: pd.DataFrame, question: str, n: int = 5) -> tuple[pd.DataFrame, str]:
-    """Pick the ward rows a planner question needs.
-
-    The rank is arithmetic from the ward index. A named ward or place is kept
-    even when it is outside the top of the list.
-    """
+    """Pick ward rows for the web API. The ask command retrieves passages instead."""
     focus, use_2025 = _focus(question)
     frame = scores.copy()
     if focus == "failure":
@@ -337,16 +527,14 @@ def select_wards(scores: pd.DataFrame, question: str, n: int = 5) -> tuple[pd.Da
         basis = (
             "outreach priority on the 2025 scores, combining sewage-failure pressure, "
             "how rarely residents report basement floods, and how few eligible homes "
-            "already have a subsidized device. A ward can lead this list on low "
-            "reporting and low device uptake even when pipe pressure is not high"
+            "already have a subsidized device"
         )
     else:
         rank_col = "low_intake_rank"
         basis = (
             "outreach priority, the sum of three ranks: sewage-failure pressure, "
             "how rarely residents report basement floods, and how few eligible homes "
-            "already have a subsidized device. A ward can lead this list on low "
-            "reporting and low device uptake even when pipe pressure is not high"
+            "already have a subsidized device"
         )
     if rank_col != "priority_rank":
         frame["priority_rank"] = frame[rank_col].astype(int)
@@ -356,9 +544,9 @@ def select_wards(scores: pd.DataFrame, question: str, n: int = 5) -> tuple[pd.Da
             "(2023 pipes aged two years, with a credit for new pipe, complaint rates held fixed). "
             "It is not a forecast of storms"
         )
-    failure_rank_col = "failure_rank_2025" if use_2025 else "failure_rank"
-    frame["shown_failure_rank"] = frame[failure_rank_col].astype(int)
-
+    frame["shown_failure_rank"] = frame[
+        "failure_rank_2025" if use_2025 else "failure_rank"
+    ].astype(int)
     ranked = frame.sort_values(["priority_rank", "ward_id"])
     named = _mentioned_ward_ids(frame, question)
     if not named:
@@ -373,12 +561,11 @@ def select_wards(scores: pd.DataFrame, question: str, n: int = 5) -> tuple[pd.Da
         else:
             chosen = matched.head(8)
             scope = "the wards named in the question, highest priority first"
-    basis = f"{basis}. Showing {scope}"
-    return chosen.reset_index(drop=True), basis
+    return chosen.reset_index(drop=True), f"{basis}. Showing {scope}"
 
 
 def format_ward_brief(selected: pd.DataFrame, basis: str) -> str:
-    """Lay-language lines a planner and a small local model can both read."""
+    """Lay-language lines used by the web API."""
     lines = [
         f"Ward index used for this answer: {basis}.",
         "Priority rank 1 is the strongest match. "

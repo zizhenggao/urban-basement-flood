@@ -246,7 +246,7 @@ def answer(
         result.passages = [_excerpt(hit) for hit in hits]
 
     if model:
-        text = ollama_answer(question, hits, model, result.brief)
+        text, _error = ollama_answer(question, hits, model, result.brief)
         result.llm_answer = text
         result.llm_available = text is not None
     return result
