@@ -10,8 +10,8 @@ import argparse
 import textwrap
 
 from flood_rag.paths import OUTPUT
-from flood_rag.policy import PolicyIndex, load_chunks, ollama_answer, save_chunks
-from flood_rag.score import build_scores, format_ward_brief, select_wards
+from flood_rag.policy import Chunk, PolicyIndex, load_chunks, ollama_answer, save_chunks
+from flood_rag.score import build_scores, ward_passages
 
 
 def _pct(frame):
@@ -60,51 +60,59 @@ def _print_hits(title: str, hits) -> None:
         print("None.\n")
         return
     for chunk, score in hits:
-        ward = f" ward {chunk.ward_id}" if chunk.ward_id else ""
-        print(f"--- {chunk.source} p.{chunk.page}{ward}  score {score:.3f}")
+        if chunk.source == "ward index":
+            where = "ranking" if chunk.ward_id is None else f"ward {chunk.ward_id}"
+            label = f"ward index {where}"
+        else:
+            ward = f" ward {chunk.ward_id}" if chunk.ward_id else ""
+            label = f"{chunk.source} p.{chunk.page}{ward}"
+        print(f"--- {label}  score {score:.3f}")
         print(textwrap.shorten(chunk.text.replace("\n", " "), width=500))
         print()
 
 
-def _ask(scores, question: str, model: str, k: int) -> None:
-    selected, basis = select_wards(scores, question)
-    brief = format_ward_brief(selected, basis)
-    print(f"\n{brief}\n")
-
+def prepare_index(scores):
+    """Policy pages and ward-index passages in one TF-IDF index."""
     chunks = load_chunks()
+    for passage in ward_passages(scores):
+        chunks.append(Chunk("ward index", passage["page"], passage["ward_id"], passage["text"]))
     save_chunks(chunks)
-    index = PolicyIndex(chunks)
-    general = index.search(question, k=k)
-    ward_ids = [int(ward_id) for ward_id in selected["ward_id"].tolist()]
-    ward_pages = index.pages_for_wards(question, ward_ids, limit=3)
-    seen = {(chunk.source, chunk.page) for chunk, _ in general}
-    ward_pages = [hit for hit in ward_pages if (hit[0].source, hit[0].page) not in seen]
-    _print_hits(f"Policy excerpts for: {question}", general)
-    _print_hits("Policy pages for the priority wards", ward_pages)
+    return PolicyIndex(chunks)
 
-    if not model:
-        print(
-            "The ward index above is the outreach list. "
-            "Pass --model to have a local model turn it and the excerpts into a paragraph."
-        )
+
+def answer_question(index, question: str, model: str, k: int):
+    """Retrieve from both sources and generate an answer from those excerpts."""
+    hits = index.search(question, k=k)
+    answer, error = ollama_answer(question, hits, model)
+    return hits, answer, error
+
+
+def _ask(scores, question: str, model: str, k: int) -> None:
+    index = prepare_index(scores)
+    hits = index.search(question, k=k)
+    _print_hits(f"Retrieved from the ward index and the policy PDFs: {question}", hits)
+    print(f"Generating an answer with {model} from those excerpts.\n")
+    answer, error = ollama_answer(question, hits, model)
+    if error:
+        print(error)
         return
-    answer = ollama_answer(question, general + ward_pages, model, brief)
-    if answer:
-        print(answer)
-    else:
-        print(
-            "Ollama did not answer. Start it with `ollama serve` and pull a small model, "
-            f"for example `ollama pull {model}`."
-        )
+    print(answer)
+    path = OUTPUT / "ask_answer.txt"
+    path.write_text(f"Question: {question}\n\n{answer}\n", encoding="utf-8")
+    print(f"\nWrote {path}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Local basement-flood ward index")
     sub = parser.add_subparsers(dest="cmd")
-    ask = sub.add_parser("ask", help="Rank wards from the index, then retrieve policy pages")
+    ask = sub.add_parser("ask", help="Retrieve both sources, then generate an answer")
     ask.add_argument("question")
-    ask.add_argument("--model", default="", help="Ollama model name, e.g. qwen2.5:1.5b")
+    ask.add_argument("--model", default="qwen2.5:1.5b", help="Local Ollama model used to write the answer")
     ask.add_argument("-k", type=int, default=4)
+    evaluate = sub.add_parser("eval", help="Score ask with RAGAS on a fixed local question set")
+    evaluate.add_argument("--model", default="qwen2.5:1.5b", help="Ollama model that writes the answers")
+    evaluate.add_argument("--judge", default="", help="Ollama model that scores the answers. Defaults to --model.")
+    evaluate.add_argument("-k", type=int, default=4)
     args = parser.parse_args()
 
     scores = build_scores()
@@ -114,6 +122,13 @@ def main() -> None:
 
     if args.cmd == "ask":
         _ask(scores, args.question, args.model, args.k)
+        return
+
+    if args.cmd == "eval":
+        from flood_rag.evaluate import evaluate_rag
+
+        judge = args.judge or args.model
+        evaluate_rag(scores, args.model, judge, args.k)
         return
 
     _print_top(scores)
