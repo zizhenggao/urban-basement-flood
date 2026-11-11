@@ -1,6 +1,11 @@
 .DS_Store
 __pycache__/
 *.pyc
+~$*
 .venv/
 venv/
+.venv-rag/
+rag/chroma/
+mlruns/
+mlflow.db
 .env
