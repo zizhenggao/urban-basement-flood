@@ -141,10 +141,61 @@ def load_chunks() -> list[Chunk]:
     return chunks
 
 
+def _readable(text: str) -> bool:
+    """False for map pages whose extracted text is mostly stray symbols and labels."""
+    words = re.findall(r"[A-Za-z][A-Za-z'\-]+", text)
+    if len(words) < 12:
+        return False
+    long_words = [w for w in words if len(w) >= 3]
+    return len(long_words) / max(1, len(text.split())) >= 0.55
+
+
+def _split_sentences(text: str, target: int) -> list[str]:
+    flat = re.sub(r"\s+", " ", text).strip()
+    sentences = re.split(r"(?<=[.!?])\s+(?=[A-Z$(\d])", flat)
+    pieces: list[str] = []
+    current = ""
+    for sentence in sentences:
+        if current and len(current) + len(sentence) > target:
+            pieces.append(current)
+            current = sentence
+        else:
+            current = f"{current} {sentence}".strip()
+    if current:
+        pieces.append(current)
+    return pieces
+
+
+def _trim_debris(text: str) -> str:
+    """Drop leading map symbols and stray labels so a passage starts at real words."""
+    tokens = text.split()
+    start = 0
+    while start < len(tokens) and not re.search(r"[A-Za-z]{3,}", tokens[start]):
+        start += 1
+    return " ".join(tokens[start:])
+
+
+def load_passages(chunks: list[Chunk] | None = None, target: int = 650) -> list[Chunk]:
+    """Split each PDF page into passages of about `target` characters.
+
+    A whole page mixes maps, legends and text, so a page-level match is vague and
+    the useful sentence gets lost. Passages that are mostly map debris are dropped.
+    """
+    passages: list[Chunk] = []
+    for page in chunks if chunks is not None else load_chunks():
+        for piece in _split_sentences(page.text, target):
+            piece = _trim_debris(piece)
+            if len(piece) >= 120 and _readable(piece):
+                passages.append(Chunk(page.source, page.page, page.ward_id, piece))
+    return passages
+
+
 class PolicyIndex:
-    def __init__(self, chunks: list[Chunk]):
+    def __init__(self, chunks: list[Chunk], sublinear_tf: bool = False):
         self.chunks = chunks
-        self.vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1, 2), min_df=1)
+        self.vectorizer = TfidfVectorizer(
+            stop_words="english", ngram_range=(1, 2), min_df=1, sublinear_tf=sublinear_tf
+        )
         self.matrix = self.vectorizer.fit_transform(c.text for c in chunks)
 
     def search(self, query: str, k: int = 4) -> list[tuple[Chunk, float]]:
@@ -203,7 +254,12 @@ class PolicyIndex:
         return found
 
 
-def ollama_answer(question: str, hits: list[tuple[Chunk, float]], model: str) -> tuple[str | None, str | None]:
+def ollama_answer(
+    question: str,
+    hits: list[tuple[Chunk, float]],
+    model: str,
+    ward_brief: str = "",
+) -> tuple[str | None, str | None]:
     """Generate from the retrieved excerpts. Returns (answer, error)."""
     def _block(hit: Chunk) -> str:
         if hit.source == "ward index":
@@ -227,7 +283,10 @@ def ollama_answer(question: str, hits: list[tuple[Chunk, float]], model: str) ->
         "If an excerpt says residents rarely report basement floods, do not call those reports high. "
         "If a number is not in the excerpts, say it is not in the excerpts. "
         "Write in plain language.\n\n"
-        f"Excerpts:\n" + "\n\n".join(blocks) + f"\n\nQuestion: {question}\nAnswer:"
+        + (f"Ward brief:\n{ward_brief}\n\n" if ward_brief else "")
+        + "Excerpts:\n"
+        + "\n\n".join(blocks)
+        + f"\n\nQuestion: {question}\nAnswer:"
     )
     body = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode()
     req = urllib.request.Request(

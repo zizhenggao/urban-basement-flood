@@ -29,6 +29,8 @@ backup complaints and flood reports.
 
 from __future__ import annotations
 
+import re
+
 import numpy as np
 import pandas as pd
 
@@ -453,6 +455,136 @@ def ward_passages(scores: pd.DataFrame) -> list[dict]:
         )
     )
     return passages
+
+
+_FAILURE = re.compile(
+    r"pipe|sewer|sewage|backup|combined|root|manhole|failure", re.I
+)
+_REPORTING = re.compile(
+    r"under-?\s*report|\breport|flood report|\bgap\b",
+    re.I,
+)
+_OUTREACH = re.compile(
+    r"outreach|subsid|intake|device|unprotected|participation|contact",
+    re.I,
+)
+
+
+def _focus(question: str) -> tuple[str, bool]:
+    """Return which rank answers the question, and whether to use the 2025 update."""
+    failure = bool(_FAILURE.search(question))
+    reporting = bool(_REPORTING.search(question))
+    outreach = bool(_OUTREACH.search(question))
+    use_2025 = "2025" in question
+    if failure and not reporting and not outreach:
+        return "failure", use_2025
+    if reporting and not outreach:
+        return "gap", use_2025
+    return "outreach", use_2025
+
+
+def _mentioned_ward_ids(scores: pd.DataFrame, question: str) -> set[int]:
+    ids: set[int] = set()
+    for raw in re.findall(r"ward\s*(\d{1,2})", question, flags=re.I):
+        number = int(raw)
+        if 1 <= number <= 25:
+            ids.add(number)
+    folded = question.lower()
+    for _, row in scores.iterrows():
+        name = str(row.ward_name).lower()
+        if name and name in folded:
+            ids.add(int(row.ward_id))
+            continue
+        for part in re.split(r"[\s\-]+", name):
+            if len(part) >= 6 and re.search(rf"\b{re.escape(part)}\b", folded):
+                ids.add(int(row.ward_id))
+                break
+    return ids
+
+
+def select_wards(scores: pd.DataFrame, question: str, n: int = 5) -> tuple[pd.DataFrame, str]:
+    """Pick ward rows for the web API. The ask command retrieves passages instead."""
+    focus, use_2025 = _focus(question)
+    frame = scores.copy()
+    if focus == "failure":
+        rank_col = "failure_rank_2025" if use_2025 else "failure_rank"
+        basis = (
+            "sewage-failure pressure: older or combined pipe, tree roots over pipe, "
+            "residential water use, and sewer-backup and manhole-overflow calls "
+            "per 1,000 eligible homes"
+        )
+    elif focus == "gap":
+        rank_col = "gap_rank_2025" if use_2025 else "gap_rank"
+        basis = (
+            "high sewage-failure pressure together with few basement-flood reports "
+            "per eligible home"
+        )
+    elif use_2025:
+        frame["priority_rank"] = (
+            frame["low_intake_priority_2025"].rank(ascending=False, method="min").astype(int)
+        )
+        rank_col = "priority_rank"
+        basis = (
+            "outreach priority on the 2025 scores, combining sewage-failure pressure, "
+            "how rarely residents report basement floods, and how few eligible homes "
+            "already have a subsidized device"
+        )
+    else:
+        rank_col = "low_intake_rank"
+        basis = (
+            "outreach priority, the sum of three ranks: sewage-failure pressure, "
+            "how rarely residents report basement floods, and how few eligible homes "
+            "already have a subsidized device"
+        )
+    if rank_col != "priority_rank":
+        frame["priority_rank"] = frame[rank_col].astype(int)
+    if use_2025:
+        basis += (
+            ". The sewage-failure side uses the 2025 structural update "
+            "(2023 pipes aged two years, with a credit for new pipe, complaint rates held fixed). "
+            "It is not a forecast of storms"
+        )
+    frame["shown_failure_rank"] = frame[
+        "failure_rank_2025" if use_2025 else "failure_rank"
+    ].astype(int)
+    ranked = frame.sort_values(["priority_rank", "ward_id"])
+    named = _mentioned_ward_ids(frame, question)
+    if not named:
+        chosen = ranked.head(n)
+        scope = f"the {len(chosen)} highest-priority wards in the city"
+    else:
+        matched = ranked[ranked["ward_id"].isin(named)]
+        if len(matched) == 1:
+            rest = ranked[~ranked["ward_id"].isin(named)].head(n)
+            chosen = pd.concat([matched, rest], ignore_index=True)
+            scope = "the ward named in the question, then the highest-priority wards for comparison"
+        else:
+            chosen = matched.head(8)
+            scope = "the wards named in the question, highest priority first"
+    return chosen.reset_index(drop=True), f"{basis}. Showing {scope}"
+
+
+def format_ward_brief(selected: pd.DataFrame, basis: str) -> str:
+    """Lay-language lines used by the web API."""
+    lines = [
+        f"Ward index used for this answer: {basis}.",
+        "Priority rank 1 is the strongest match. "
+        "Eligible homes are single-family, duplex, and triplex properties in the subsidy program. "
+        "Device share is the June 2025 stock. "
+        "Flood reports are 2019-2022. Sewer-backup rates are 2019-2021.",
+    ]
+    for _, row in selected.iterrows():
+        lines.append(
+            f"Ward {int(row.ward_id)} ({row.ward_name}): "
+            f"priority rank {int(row.priority_rank)} of 25; "
+            f"sewage-failure rank {int(row.shown_failure_rank)} of 25 "
+            f"(1 means the highest sewage-failure pressure, 25 the lowest); "
+            f"flood-report rank {int(row.low_report_rank)} of 25 "
+            f"(1 means the fewest basement-flood requests per eligible home); "
+            f"{row.subsidy_participation * 100:.1f}% of eligible homes already have a subsidized flood device; "
+            f"{int(row.properties_without_fpd)} homes are still without one."
+        )
+    return "\n".join(lines)
 
 
 def top_table(scores: pd.DataFrame, n: int = 10) -> pd.DataFrame:

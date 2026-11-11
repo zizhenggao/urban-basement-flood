@@ -118,7 +118,8 @@ def main() -> None:
     scores = build_scores()
     OUTPUT.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUT / "ward_index.csv"
-    scores.to_csv(out_path, index=False)
+    # Rounded so the CSV is byte-identical across runs and library versions.
+    scores.round(6).to_csv(out_path, index=False)
 
     if args.cmd == "ask":
         _ask(scores, args.question, args.model, args.k)

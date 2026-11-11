@@ -9,3 +9,5 @@ langchain-huggingface>=0.1
 sentence-transformers>=3.0
 ragas>=0.2
 langchain-ollama>=0.2
+fastapi>=0.110
+uvicorn[standard]>=0.29
