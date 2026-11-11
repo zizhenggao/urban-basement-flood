@@ -9,9 +9,10 @@ from __future__ import annotations
 import argparse
 import textwrap
 
+from flood_rag import service
 from flood_rag.paths import OUTPUT
-from flood_rag.policy import PolicyIndex, load_chunks, ollama_answer, save_chunks
-from flood_rag.score import build_scores, format_ward_brief, select_wards
+from flood_rag.policy import PolicyIndex, load_chunks, load_passages, save_chunks
+from flood_rag.score import build_scores
 
 
 def _pct(frame):
@@ -59,38 +60,32 @@ def _print_hits(title: str, hits) -> None:
     if not hits:
         print("None.\n")
         return
-    for chunk, score in hits:
-        ward = f" ward {chunk.ward_id}" if chunk.ward_id else ""
-        print(f"--- {chunk.source} p.{chunk.page}{ward}  score {score:.3f}")
-        print(textwrap.shorten(chunk.text.replace("\n", " "), width=500))
+    for hit in hits:
+        ward = f" ward {hit.ward_id}" if hit.ward_id else ""
+        print(f"--- {hit.source} p.{hit.page}{ward}  score {hit.score:.3f}")
+        print(textwrap.shorten(hit.text.replace("\n", " "), width=500))
         print()
 
 
 def _ask(scores, question: str, model: str, k: int) -> None:
-    selected, basis = select_wards(scores, question)
-    brief = format_ward_brief(selected, basis)
-    print(f"\n{brief}\n")
-
     chunks = load_chunks()
     save_chunks(chunks)
-    index = PolicyIndex(chunks)
-    general = index.search(question, k=k)
-    ward_ids = [int(ward_id) for ward_id in selected["ward_id"].tolist()]
-    ward_pages = index.pages_for_wards(question, ward_ids, limit=3)
-    seen = {(chunk.source, chunk.page) for chunk, _ in general}
-    ward_pages = [hit for hit in ward_pages if (hit[0].source, hit[0].page) not in seen]
-    _print_hits(f"Policy excerpts for: {question}", general)
-    _print_hits("Policy pages for the priority wards", ward_pages)
+    index = PolicyIndex(load_passages(chunks), sublinear_tf=True)
+    result = service.answer(scores, index, question, k=k, model=model)
+
+    if result.kind == "unknown":
+        print(f"\n{result.help}\n")
+        return
+    if result.wards:
+        print(f"\n{result.brief}\n")
+    if result.kind in ("program", "both"):
+        _print_hits(f"Program document passages for: {question}", result.passages)
 
     if not model:
-        print(
-            "The ward index above is the outreach list. "
-            "Pass --model to have a local model turn it and the excerpts into a paragraph."
-        )
+        print("Pass --model to have a local model turn the above into a paragraph.")
         return
-    answer = ollama_answer(question, general + ward_pages, model, brief)
-    if answer:
-        print(answer)
+    if result.llm_answer:
+        print(result.llm_answer)
     else:
         print(
             "Ollama did not answer. Start it with `ollama serve` and pull a small model, "
@@ -110,7 +105,8 @@ def main() -> None:
     scores = build_scores()
     OUTPUT.mkdir(parents=True, exist_ok=True)
     out_path = OUTPUT / "ward_index.csv"
-    scores.to_csv(out_path, index=False)
+    # Rounded so the CSV is byte-identical across runs and library versions.
+    scores.round(6).to_csv(out_path, index=False)
 
     if args.cmd == "ask":
         _ask(scores, args.question, args.model, args.k)
