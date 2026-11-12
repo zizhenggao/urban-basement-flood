@@ -23,7 +23,7 @@ export default function MapPane({ wards, pinned, onPin, onAskAbout }: Props) {
         <div style={{ flex: 1, minWidth: 240 }}>
           <h1 className="h" style={{ fontSize: 22 }}>Flood risk priority by ward</h1>
           <div style={{ fontSize: 14, color: "#4B5D6F" }}>
-            Toronto's 25 wards, ranked by the model. Hover or tap a ward for details.
+            Toronto's 25 wards. Colour shows priority; the label is the ward number. Hover or tap a ward for details.
           </div>
         </div>
         <div style={{ width: 280, maxWidth: "100%" }}>
@@ -49,7 +49,7 @@ export default function MapPane({ wards, pinned, onPin, onAskAbout }: Props) {
             width="100%"
             height="100%"
             role="img"
-            aria-label="Toronto wards coloured from red for priority 1 to blue for priority 25. Each ward is labelled with its priority number."
+            aria-label="Toronto wards coloured from red for priority 1 to blue for priority 25. Each ward is labelled with its ward number."
             style={{ display: "block", overflow: "visible" }}
           >
             <path d={geo.lake} fill="#DCEEF3" aria-hidden="true" />
@@ -77,7 +77,7 @@ export default function MapPane({ wards, pinned, onPin, onAskAbout }: Props) {
             if (!w) return null;
             return (
               <span key={g.id} className="lblh" style={{ left: `${g.x / 10}%`, top: `${g.y / 7.76}%` }}>
-                #{w.priority_rank}
+                W{w.ward_id}
               </span>
             );
           })}
