@@ -33,6 +33,8 @@ class AskedWard(BaseModel):
     properties_with_fpd: int
     properties_without_fpd: int
     flood_reports_2019_2022: int
+    old_pipe_pct: float = Field(description="Share of the ward's sewer pipe that is old, 0-100")
+    combined_sewer_pct: float = Field(description="Share of the ward's sewer that is combined, 0-100")
     topic_rank: int | None = Field(default=None, description="Rank on the asked topic, when the question had one")
     topic_value: str | None = Field(default=None, description="The ward's value on that topic, in plain language")
 
@@ -40,8 +42,7 @@ class AskedWard(BaseModel):
 class Excerpt(BaseModel):
     source: str
     page: int
-    ward_id: int | None
-    score: float
+    ward_id: int | None = None
     text: str
 
 

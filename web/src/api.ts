@@ -27,6 +27,8 @@ export type AskedWard = {
   properties_with_fpd: number;
   properties_without_fpd: number;
   flood_reports_2019_2022: number;
+  old_pipe_pct: number;
+  combined_sewer_pct: number;
   topic_rank: number | null;
   topic_value: string | null;
 };
@@ -35,7 +37,6 @@ export type Excerpt = {
   source: string;
   page: number;
   ward_id: number | null;
-  score: number;
   text: string;
 };
 
@@ -71,11 +72,11 @@ export async function getWards(): Promise<Ward[]> {
   return res.json();
 }
 
-export async function ask(question: string, model: string): Promise<AskResponse> {
+export async function ask(question: string): Promise<AskResponse> {
   const res = await fetch("/api/ask", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, model }),
+    body: JSON.stringify({ question }),
   });
   if (!res.ok) return fail(res);
   return res.json();
