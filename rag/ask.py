@@ -207,8 +207,12 @@ def _keep_policy_docs(docs: list, selected: pd.DataFrame) -> list:
     return matched[:6] + citywide[:2]
 
 
-def retrieve(question: str, k: int = 5):
-    """Return the ward-index block and policy pages for the question."""
+def retrieve_parts(question: str, k: int = 5):
+    """Return the selected ward rows, the basis, the ward-index text and the policy pages.
+
+    `retrieve` keeps only the last two, which the model reads. The web API also
+    needs the first two to draw the ward table.
+    """
     if not WARD_INDEX.exists():
         raise SystemExit(f"Missing {WARD_INDEX}. Run: python -m flood_rag.run")
     scores = pd.read_csv(WARD_INDEX)
@@ -225,7 +229,13 @@ def retrieve(question: str, k: int = 5):
             "basement flooding protection study area subsidy eligibility"
         )
         _add_docs(store.similarity_search(query, k=2), docs, seen)
-    return ward_index, _keep_policy_docs(docs, selected)
+    return selected, basis, ward_index, _keep_policy_docs(docs, selected)
+
+
+def retrieve(question: str, k: int = 5):
+    """Return the ward-index block and policy pages for the question."""
+    _, _, ward_index, docs = retrieve_parts(question, k=k)
+    return ward_index, docs
 
 
 def generate(question: str, ward_index: str, docs) -> str:
