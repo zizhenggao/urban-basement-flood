@@ -13,5 +13,5 @@ REQUESTS_311 = (
 TREES = ROOT / "trees_data" / "trees_by_ward25_2019_2022_with_sewer.xlsx"
 WATER_DIR = ROOT / "Water billing"
 FLOODS = DATA / "basement-flooding-by-ward.xlsx"
-POLICY_DIR = ROOT / "policy data"
+POLICY_DIR = ROOT / "policy context"
 SUMMARY_PDF_NAME = "Basement Flooding Protection Program Summary .pdf"

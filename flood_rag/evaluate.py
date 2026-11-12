@@ -82,6 +82,30 @@ def eval_cases(scores: pd.DataFrame) -> list[dict]:
     ]
 
 
+def contexts_for_judge(texts: list[str], limit: int = 700) -> list[str]:
+    """Keep readable sentences. Diagram pages make the 1.5B judge skip the JSON verdict."""
+    kept = []
+    for text in texts:
+        lines = []
+        for line in text.splitlines():
+            stripped = line.strip()
+            if len(stripped) < 40:
+                continue
+            letters = sum(character.isalpha() for character in stripped)
+            if letters / len(stripped) < 0.55:
+                continue
+            lines.append(stripped)
+        cleaned = " ".join(lines)
+        if not cleaned:
+            letters = sum(character.isalpha() for character in text)
+            if text and letters / len(text) >= 0.6:
+                cleaned = " ".join(text.split())
+        cleaned = cleaned[:limit].strip()
+        if cleaned:
+            kept.append(cleaned)
+    return kept
+
+
 def _samples(scores: pd.DataFrame, model: str, k: int) -> list[dict]:
     index = prepare_index(scores)
     rows = []
@@ -95,7 +119,7 @@ def _samples(scores: pd.DataFrame, model: str, k: int) -> list[dict]:
         rows.append(
             {
                 "user_input": question,
-                "retrieved_contexts": [hit.text[:1600] for hit, _ in hits],
+                "retrieved_contexts": contexts_for_judge([hit.text for hit, _ in hits]),
                 "response": answer,
                 "reference": case["reference"],
             }
@@ -103,20 +127,27 @@ def _samples(scores: pd.DataFrame, model: str, k: int) -> list[dict]:
     return rows
 
 
+def judge_llm(judge: str):
+    """Local judge that must return JSON, with room for the classification list."""
+    _allow_ragas_import()
+    from langchain_ollama import ChatOllama
+    from ragas.llms import LangchainLLMWrapper
+
+    return LangchainLLMWrapper(
+        ChatOllama(model=judge, temperature=0, format="json", num_predict=2048)
+    )
+
+
 def evaluate_rag(scores: pd.DataFrame, model: str, judge: str, k: int) -> None:
     """Run the three questions, then score retrieval and the generated answers."""
     os.environ.setdefault("RAGAS_DO_NOT_TRACK", "true")
     _allow_ragas_import()
-    from langchain_ollama import ChatOllama
     from ragas import EvaluationDataset, evaluate
-    from ragas.llms import LangchainLLMWrapper
     from ragas.metrics import Faithfulness, FactualCorrectness, LLMContextRecall
     from ragas.run_config import RunConfig
 
     rows = _samples(scores, model, k)
-    evaluator = LangchainLLMWrapper(
-        ChatOllama(model=judge, temperature=0, num_predict=1024)
-    )
+    evaluator = judge_llm(judge)
     print(f"\nScoring {len(rows)} answers with RAGAS. The judge is {judge}.\n")
     result = evaluate(
         dataset=EvaluationDataset.from_list(rows),
