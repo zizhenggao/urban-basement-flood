@@ -135,9 +135,9 @@ On the local `qwen2.5:1.5b` judge, that run scored faithfulness 1.00 and factual
 | Trees and distance to gravity mains | `trees_data/trees_by_ward25_2019_2022_with_sewer.xlsx` |
 | Residential water use | `Water billing/Water_Consumption_2019.xlsx` … `2022` |
 | Basement flood reports and subsidy approvals | `data/raw/basement-flooding-by-ward.xlsx` (Toronto Open Data) |
-| Ward profile summaries, June 2025 subsidy stock | `policy data/Basement Flooding Protection Program Summary .pdf` |
+| Ward profile summaries, June 2025 subsidy stock | `policy context/Basement Flooding Protection Program Summary .pdf` |
 
-The other two PDFs in `policy data/` are the program status update and the 2026–2030 capital briefing note. They are searched with the summary. They are not parsed into the score.
+The other two PDFs in `policy context/` are the program status update and the 2026–2030 capital briefing note. They are searched with the summary. They are not parsed into the score.
 
 The 44-ward sewer panel is not mixed into this score. Those polygons are a different geography.
 

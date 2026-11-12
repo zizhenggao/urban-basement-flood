@@ -30,7 +30,7 @@ The numbers the answer is allowed to use. This piece does not write prose.
 | Source | File | What it contributes |
 |---|---|---|
 | Ward score | `flood_rag/score.py`, `build_scores` line 180 | Sewage-failure rank, flood-report rank, outreach rank, gap rank, device counts |
-| Policy PDFs | `policy data/*.pdf`, read by `load_chunks` | Program rules, eligibility, study areas |
+| Policy PDFs | `policy context/*.pdf`, read by `load_chunks` | Program rules, eligibility, study areas |
 
 `build_scores` is arithmetic. Edit it only when rank 1 itself should change. A wording change does not belong here.
 
