@@ -48,27 +48,10 @@ function shortSource(source: string): string {
   return source.replace(/\.pdf$/i, "");
 }
 
-// Used only when the local model did not answer. Every number is copied from the API response.
-function fallbackText(r: AskResponse): string {
-  const parts: string[] = [];
-  if (r.wards.length) {
-    parts.push(
-      r.wards
-        .map(
-          (w) =>
-            `Ward ${w.ward_id} ${w.ward_name}: priority ${w.priority_rank} of 25. ` +
-            `Sewage-failure rank ${w.failure_rank} of 25 (1 = highest pressure). ` +
-            `Old pipes ${w.old_pipe_pct.toFixed(1)}%, combined sewer ${w.combined_sewer_pct.toFixed(1)}%. ` +
-            `${(w.subsidy_participation * 100).toFixed(1)}% of eligible homes have a subsidized device; ` +
-            `${w.properties_without_fpd.toLocaleString("en-CA")} homes are still without one.`,
-        )
-        .join("\n"),
-    );
-  }
-  parts.push("The data above comes straight from the ward table. Open “How this answer was made” for the sources.");
-  parts.push("These scores show relative priority, not a guarantee, and must not be used to decide who is eligible.");
-  return parts.join("\n\n");
-}
+// Shown when the local model did not answer. No answer is invented from the data.
+const NO_MODEL_TEXT =
+  "The local model is off, so no answer was written. " +
+  "The ward rows and program passages the search found are listed in “How this answer was made”.";
 
 type Props = { injected: { q: string; n: number } | null };
 
@@ -111,16 +94,13 @@ export default function Chat({ injected }: Props) {
     ]);
     try {
       const response = await ask(question);
-      let text: string;
-      let modelNote: string;
-      if (response.llm_available && response.answer) {
-        text = response.answer;
-        modelNote = `Written by a small local model (${response.model}), which can misread numbers. Check it against the table in “How this answer was made”.`;
-      } else {
-        text = fallbackText(response);
-        modelNote = `The local model did not answer. Start Ollama with \`ollama serve\` and install ${response.model} with \`ollama pull ${response.model}\`.`;
-      }
-      patch(botId, { phase: "review", text, original: text, response, modelNote });
+      const answered = Boolean(response.llm_available && response.answer);
+      const text = answered ? (response.answer as string) : NO_MODEL_TEXT;
+      const modelNote = answered
+        ? `Written by a small local model (${response.model}), which can misread numbers. Check it against the table in “How this answer was made”.`
+        : `Start Ollama with \`ollama serve\` and install ${response.model} with \`ollama pull ${response.model}\`.`;
+      // Without a model answer there is nothing for staff to approve.
+      patch(botId, { phase: answered ? "review" : "info", text, original: text, response, modelNote });
     } catch (err) {
       const reason = err instanceof TypeError ? "Could not reach the API. Is it running on port 8000?" : (err as Error).message;
       patch(botId, { phase: "error", text: reason, original: reason });
