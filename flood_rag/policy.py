@@ -9,6 +9,7 @@ paragraph from the passages search already found. Nothing here calls a paid API.
 from __future__ import annotations
 
 import json
+import os
 import re
 import urllib.error
 import urllib.request
@@ -288,9 +289,17 @@ def ollama_answer(
         + "\n\n".join(blocks)
         + f"\n\nQuestion: {question}\nAnswer:"
     )
-    body = json.dumps({"model": model, "prompt": prompt, "stream": False}).encode()
+    body = json.dumps(
+        {
+            "model": model,
+            "prompt": prompt,
+            "stream": False,
+            # Stop if the model starts writing a new question of its own.
+            "options": {"stop": ["\nQuestion:"]},
+        }
+    ).encode()
     req = urllib.request.Request(
-        "http://127.0.0.1:11434/api/generate",
+        os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434").rstrip("/") + "/api/generate",
         data=body,
         headers={"Content-Type": "application/json"},
     )

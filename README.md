@@ -2,6 +2,8 @@
 
 A planner question is answered from two local sources: a ward score built from city tables, and the Basement Flooding Protection Program PDFs. The score itself is arithmetic. The language model only writes a paragraph from passages the search has already retrieved. Nothing in this path calls a paid API.
 
+To run the web app on your computer, follow [Quick start](#quick-start) at the end of this file.
+
 ## Current design
 
 `python3 -m flood_rag.run` builds the ward index and prints the ranking lists. `ask` is the retrieval-augmented path. `eval` runs that same path on three fixed questions and scores it with RAGAS. The places to edit that path are in [RAG.md](RAG.md). Start with `flood_rag/policy.py`, function `ollama_answer`.
@@ -100,11 +102,11 @@ python3 -m flood_rag.run ask "Which wards should we outreach because sewer backu
 
 The score is written to `outputs/ward_index.csv`. The generated paragraph is written to `outputs/ask_answer.txt`.
 
-The default model is `qwen2.5:1.5b` (about 1 GB, CPU). Install Ollama, then pull it once:
+The default model is `qwen2.5:3b` (about 2 GB, CPU). Install Ollama, then pull it once:
 
 ```bash
 # install from https://ollama.com then:
-ollama pull qwen2.5:1.5b
+ollama pull qwen2.5:3b
 python3 -m flood_rag.run ask "Why might Scarborough wards show low subsidy intake?"
 ```
 
@@ -144,3 +146,70 @@ The 44-ward sewer panel is not mixed into this score. Those polygons are a diffe
 ## Not in this first cut
 
 Ward-profile census fields (low-rise counts from the Open Data ward profiles) are not in the folder yet. The PDF eligible-home counts stand in for that denominator. Low-rise density from the ward-profile dataset would be a better exposure measure once that file is added.
+
+
+## Quick start
+
+Run the map and the chat on your own computer. Nothing is sent to a paid service.
+
+### What you need
+
+- Python 3.10 or newer
+- Node.js 18 or newer
+- [Ollama](https://ollama.com/download), which runs the language model on your computer
+- About 3 GB of free disk space and an internet connection the first time
+
+### Fast way (macOS and Linux)
+
+```bash
+git clone <repository-url>
+cd urban-basement-flood
+./setup.sh
+```
+
+The script checks the tools, creates `.venv`, installs the Python and web packages, and downloads the model `qwen2.5:3b`. It is safe to run again.
+
+### Step by step (also for Windows)
+
+```bash
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt     # Windows: .venv\Scripts\python
+ollama pull qwen2.5:3b
+cd web && npm install
+```
+
+### Start the app
+
+Use three terminals, all from the project folder.
+
+```bash
+ollama serve                                              # 1. skip if Ollama is already running
+.venv/bin/python -m uvicorn api.main:app --reload         # 2. the API, on port 8000
+cd web && npm run dev                                     # 3. the web page, on port 5173
+```
+
+Open http://localhost:5173. The API reads the PDFs when it starts, so wait a few seconds before the map appears.
+
+### Check that it works
+
+You should see Toronto's 25 wards on the map, each labelled W1 to W25 and coloured by priority. Try these questions in the chat:
+
+| Question | What you should see |
+|---|---|
+| Which ward has the highest share of old sewer pipes? | Ward 12 first (61%), then Ward 4 and Ward 11 |
+| What does the subsidy cover? | Passages from the program PDFs |
+| What should we tell residents in Ward 10 Spadina-Fort York? | Ward 10 and its figures, plus a draft from the model |
+| What is the weather today? | A help message listing what can be asked |
+
+The model writes a draft that a person must review. It is a small model and can misread numbers, so check the table under "How this answer was made".
+
+### If something fails
+
+| Message | What to do |
+|---|---|
+| "Could not reach the API" | Start the API (terminal 2) and wait for "Application startup complete" |
+| "The local model did not answer" | Run `ollama serve`, then `ollama pull qwen2.5:3b` |
+| "Address already in use" | Another program uses port 8000 or 5173. Close it, or stop the old copy of the app |
+| `ModuleNotFoundError` | Use `.venv/bin/python`, not the system `python` |
+
+The folder `rag/` and `requirements-rag.txt` are an experiment with embeddings and Chroma. The app does not use them.
