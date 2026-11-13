@@ -98,8 +98,8 @@ The writer and the judge are different flags. `ollama_answer` only receives the 
 
 | Role | Flag | Line | Current default |
 |---|---|---|---|
-| Writes the `ask` paragraph | `--model` | 110 | `qwen2.5:1.5b` |
-| Writes the answers `eval` scores | `--model` | 113 | `qwen2.5:1.5b` |
+| Writes the `ask` paragraph | `--model` | 110 | `qwen2.5:3b` |
+| Writes the answers `eval` scores | `--model` | 113 | `qwen2.5:3b` |
 | Scores those answers | `--judge` | 114 | same as `--model` when omitted |
 
 ```bash

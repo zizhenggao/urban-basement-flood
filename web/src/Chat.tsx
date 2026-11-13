@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { ask, type AskResponse, type Excerpt } from "./api";
 
+const MODEL = "qwen2.5:3b";
+
 const STARTERS = [
   "What does the subsidy cover?",
   "Where are the oldest pipes?",
@@ -48,10 +50,45 @@ function shortSource(source: string): string {
   return source.replace(/\.pdf$/i, "");
 }
 
-// Shown when the local model did not answer. No answer is invented from the data.
-const NO_MODEL_TEXT =
-  "The local model is off, so no answer was written. " +
-  "The ward rows and program passages the search found are listed in “How this answer was made”.";
+// Provisional text: every number and quote is copied from the API response, nothing is generated.
+function summarize(r: AskResponse): string {
+  if (r.kind === "unknown") return r.help ?? "";
+  const parts: string[] = [];
+
+  if (r.wards.length) {
+    if (r.topic_label) {
+      parts.push(`${r.basis}.`);
+      parts.push(r.wards.map((w) => `#${w.topic_rank} Ward ${w.ward_id} ${w.ward_name}: ${w.topic_value}.`).join("\n"));
+    } else {
+      parts.push(
+        r.wards
+          .map(
+            (w) =>
+              `Ward ${w.ward_id} ${w.ward_name}: priority ${w.priority_rank} of 25. ` +
+              `Sewage-failure rank ${w.failure_rank} of 25 (1 = highest pressure). ` +
+              `Flood-report rank ${w.low_report_rank} of 25 (1 = fewest reports per eligible home). ` +
+              `${(w.subsidy_participation * 100).toFixed(1)}% of eligible homes have a subsidized device; ` +
+              `${w.properties_without_fpd.toLocaleString("en-CA")} homes are still without one.`,
+          )
+          .join("\n"),
+      );
+    }
+  }
+
+  if (r.passages.length) {
+    parts.push("From the program documents:");
+    parts.push(r.passages.map((p) => `"${p.text}"\n(${shortSource(p.source)}, p.${p.page})`).join("\n\n"));
+  } else if (r.kind === "program") {
+    parts.push("I did not find a passage about that in the program documents.");
+  }
+
+  parts.push(
+    r.wards.length
+      ? "These scores show relative priority, not a guarantee, and must not be used to decide who is eligible."
+      : "Rules and amounts can change, and program staff decide eligibility. Check the cited pages before quoting a figure.",
+  );
+  return parts.join("\n\n");
+}
 
 type Props = { injected: { q: string; n: number } | null };
 
@@ -59,6 +96,7 @@ export default function Chat({ injected }: Props) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
+  const [useModel, setUseModel] = useState(true);
   const nextId = useRef(1);
   const lastInjected = useRef(0);
   const endRef = useRef<HTMLDivElement>(null);
@@ -93,14 +131,15 @@ export default function Chat({ injected }: Props) {
       { id: botId, role: "bot", phase: "working", text: "", original: "", chk: false, editing: false, copied: false },
     ]);
     try {
-      const response = await ask(question);
-      const answered = Boolean(response.llm_available && response.answer);
-      const text = answered ? (response.answer as string) : NO_MODEL_TEXT;
-      const modelNote = answered
-        ? `Written by a small local model (${response.model}), which can misread numbers. Check it against the table in “How this answer was made”.`
-        : `Start Ollama with \`ollama serve\` and install ${response.model} with \`ollama pull ${response.model}\`.`;
-      // Without a model answer there is nothing for staff to approve.
-      patch(botId, { phase: answered ? "review" : "info", text, original: text, response, modelNote });
+      const response = await ask(question, useModel ? MODEL : "");
+      let text = summarize(response);
+      let modelNote: string | undefined;
+      if (response.llm_available === true && response.answer) {
+        text += `\n\nModel paragraph (written by a small local model, which can misread numbers; check it against the figures above):\n${response.answer}`;
+      } else if (response.llm_available === false) {
+        modelNote = "The local model did not answer. Start Ollama with `ollama serve` and check the model is installed.";
+      }
+      patch(botId, { phase: response.kind === "unknown" ? "info" : "review", text, original: text, response, modelNote });
     } catch (err) {
       const reason = err instanceof TypeError ? "Could not reach the API. Is it running on port 8000?" : (err as Error).message;
       patch(botId, { phase: "error", text: reason, original: reason });
@@ -172,7 +211,11 @@ export default function Chat({ injected }: Props) {
           />
           <button className="btn btnp" disabled={prompt.trim().length < 3 || busy} onClick={() => void send(prompt)}>Send</button>
         </div>
-        <div className="note" style={{ marginTop: 8 }}>
+        <label style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8, fontSize: 13, minHeight: 32 }}>
+          <input type="checkbox" checked={useModel} onChange={(e) => setUseModel(e.target.checked)} style={{ width: 18, height: 18, accentColor: "#0B6B74" }} />
+          <span>Also draft a paragraph with the local model ({MODEL}). It can misread numbers.</span>
+        </label>
+        <div className="note" style={{ marginTop: 4 }}>
           The agent never sends anything; staff approve and copy. Approval is not saved yet.
         </div>
       </div>
@@ -198,7 +241,7 @@ function BotCard({ m, patch }: { m: BotMsg; patch: (id: number, c: Partial<BotMs
           <svg className="spin" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B6B74" strokeWidth="3" aria-hidden="true">
             <path d="M12 3a9 9 0 1 0 9 9" />
           </svg>
-          Selecting wards, searching the program documents and writing the answer. This can take up to a minute…
+          Selecting wards and searching the program document…
         </div>
       )}
 
@@ -214,7 +257,7 @@ function BotCard({ m, patch }: { m: BotMsg; patch: (id: number, c: Partial<BotMs
 
           {m.modelNote && <div className="warnbox">{m.modelNote}</div>}
 
-          {r && (
+          {r && r.kind !== "unknown" && (
             <details style={{ marginTop: 10, borderTop: "1px solid #E7ECF0" }}>
               <summary>How this answer was made</summary>
               {r.wards.length > 0 && (
@@ -224,30 +267,41 @@ function BotCard({ m, patch }: { m: BotMsg; patch: (id: number, c: Partial<BotMs
               <div style={{ overflowX: "auto" }}>
                 <table>
                   <thead>
-                    <tr><th>Priority</th><th>Ward</th><th>Failure rank</th><th>Report rank</th><th>Old pipes</th><th>Combined sewer</th><th>With device</th><th>Without</th><th>Flood reports</th></tr>
+                    {r.topic_label ? (
+                      <tr><th>Rank</th><th>Ward</th><th>Value</th></tr>
+                    ) : (
+                      <tr><th>Priority</th><th>Ward</th><th>Failure rank</th><th>Report rank</th><th>With device</th><th>Without</th><th>Flood reports</th></tr>
+                    )}
                   </thead>
                   <tbody>
-                    {r.wards.map((w) => (
-                      <tr key={w.ward_id}>
-                        <td>#{w.priority_rank}</td>
-                        <td>{w.ward_id} {w.ward_name}</td>
-                        <td>{w.failure_rank}</td>
-                        <td>{w.low_report_rank}</td>
-                        <td>{w.old_pipe_pct.toFixed(1)}%</td>
-                        <td>{w.combined_sewer_pct.toFixed(1)}%</td>
-                        <td>{(w.subsidy_participation * 100).toFixed(1)}%</td>
-                        <td>{w.properties_without_fpd.toLocaleString("en-CA")}</td>
-                        <td>{w.flood_reports_2019_2022}</td>
-                      </tr>
-                    ))}
+                    {r.wards.map((w) =>
+                      r.topic_label ? (
+                        <tr key={w.ward_id}>
+                          <td>#{w.topic_rank}</td>
+                          <td>{w.ward_id} {w.ward_name}</td>
+                          <td>{w.topic_value}</td>
+                        </tr>
+                      ) : (
+                        <tr key={w.ward_id}>
+                          <td>#{w.priority_rank}</td>
+                          <td>{w.ward_id} {w.ward_name}</td>
+                          <td>{w.failure_rank}</td>
+                          <td>{w.low_report_rank}</td>
+                          <td>{(w.subsidy_participation * 100).toFixed(1)}%</td>
+                          <td>{w.properties_without_fpd.toLocaleString("en-CA")}</td>
+                          <td>{w.flood_reports_2019_2022}</td>
+                        </tr>
+                      ),
+                    )}
                   </tbody>
                 </table>
               </div>
-              <div className="note" style={{ marginTop: 4 }}>
-                Failure rank 1 = highest sewage-failure pressure. Report rank 1 = fewest flood reports per eligible home.
-                Old pipes and combined sewer are shares of the ward's sewer network. Flood reports are 2019–2022.
-                The table lists only the wards the search picked, not all 25.
-              </div>
+              {!r.topic_label && (
+                <div className="note" style={{ marginTop: 4 }}>
+                  Failure rank 1 = highest sewage-failure pressure. Report rank 1 = fewest flood reports per eligible home.
+                  Flood reports are 2019–2022.
+                </div>
+              )}
               </>
               )}
               {passages.length > 0 && (
@@ -255,13 +309,13 @@ function BotCard({ m, patch }: { m: BotMsg; patch: (id: number, c: Partial<BotMs
                   <div className="lab" style={{ margin: "10px 0 4px" }}>[2] Program document passages</div>
                   {passages.map((x) => (
                     <div className="excerpt" key={`${x.source}-${x.page}-${x.text.slice(0, 20)}`}>
-                      <div style={{ fontWeight: 600 }}>{shortSource(x.source)} · page {x.page}</div>
-                      <div style={{ whiteSpace: "pre-line" }}>{x.text.length > 400 ? `${x.text.slice(0, 400)}…` : x.text}</div>
+                      <div style={{ fontWeight: 600 }}>{x.source}</div>
+                      <div>Page {x.page} · word-match score {x.score.toFixed(3)}</div>
                     </div>
                   ))}
                   <div className="note" style={{ marginBottom: 8 }}>
-                    Passages are cut automatically from the PDFs and found by meaning, so the best one may not be first.
-                    Text from maps may not read well.
+                    Passages are cut automatically from the PDFs by matching words, so the best one may not be first.
+                    The quoted text is in the answer above.
                   </div>
                 </>
               )}

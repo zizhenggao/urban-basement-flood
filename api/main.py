@@ -7,14 +7,16 @@ Interactive docs: http://127.0.0.1:8000/docs
 
 from __future__ import annotations
 
+import uuid
 from contextlib import asynccontextmanager
+from dataclasses import asdict
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from api import rag_adapter
 from api.schemas import AskRequest, AskResponse, Ward
 from flood_rag import service
+from flood_rag.policy import PolicyIndex, load_passages
 from flood_rag.score import build_scores
 
 state: dict = {}
@@ -22,12 +24,11 @@ state: dict = {}
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # The map still reads the ward scores from flood_rag.
+    # Parsing the PDFs is slow, so it happens once, not per request.
     scores = build_scores()
     state["scores"] = scores
     state["wards"] = service.ward_table(scores)
-    # Chroma and the embedding model load once here, not on every question.
-    rag_adapter.warm_up()
+    state["index"] = PolicyIndex(load_passages(), sublinear_tf=True)
     yield
     state.clear()
 
@@ -61,7 +62,23 @@ def get_ward(ward_id: int):
 
 @app.post("/api/ask", response_model=AskResponse)
 def ask(request: AskRequest):
-    try:
-        return rag_adapter.answer(request.question, k=request.k)
-    except rag_adapter.RagUnavailable as problem:
-        raise HTTPException(status_code=503, detail=str(problem))
+    result = service.answer(
+        state["scores"],
+        state["index"],
+        request.question,
+        k=request.k,
+        model=request.model,
+    )
+    return AskResponse(
+        message_id=uuid.uuid4().hex,
+        question=result.question,
+        kind=result.kind,
+        topic_label=result.topic_label,
+        basis=result.basis,
+        wards=result.wards,
+        passages=[asdict(e) for e in result.passages],
+        help=result.help,
+        model=result.model,
+        answer=result.llm_answer,
+        llm_available=result.llm_available,
+    )
