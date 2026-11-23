@@ -11,3 +11,4 @@ mlflow.db
 .env
 web/node_modules/
 web/dist/
+web/public/wards.json

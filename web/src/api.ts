@@ -65,18 +65,33 @@ async function fail(res: Response): Promise<never> {
   throw new Error(detail);
 }
 
+const LOCAL_ONLY =
+  "This page shows the ward map. Questions run on your computer: python -m uvicorn api.main:app";
+
 export async function getWards(): Promise<Ward[]> {
-  const res = await fetch("/api/wards");
+  try {
+    const res = await fetch("/api/wards");
+    if (res.ok) return res.json();
+  } catch {
+    /* published site has no API; use the snapshot written at build time */
+  }
+  const res = await fetch(`${import.meta.env.BASE_URL}wards.json`);
   if (!res.ok) return fail(res);
   return res.json();
 }
 
 export async function ask(question: string, model: string): Promise<AskResponse> {
-  const res = await fetch("/api/ask", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, model }),
-  });
+  let res: Response;
+  try {
+    res = await fetch("/api/ask", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, model }),
+    });
+  } catch {
+    throw new Error(LOCAL_ONLY);
+  }
+  if (res.status === 404) throw new Error(LOCAL_ONLY);
   if (!res.ok) return fail(res);
   return res.json();
 }

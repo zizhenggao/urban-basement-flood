@@ -141,7 +141,7 @@ export default function Chat({ injected }: Props) {
       }
       patch(botId, { phase: response.kind === "unknown" ? "info" : "review", text, original: text, response, modelNote });
     } catch (err) {
-      const reason = err instanceof TypeError ? "Could not reach the API. Is it running on port 8000?" : (err as Error).message;
+      const reason = err instanceof TypeError ? "Could not reach the API. Start it with: python -m uvicorn api.main:app" : (err as Error).message;
       patch(botId, { phase: "error", text: reason, original: reason });
     } finally {
       setBusy(false);

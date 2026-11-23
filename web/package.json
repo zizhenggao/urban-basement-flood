@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/build-wards.mjs",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview"
   },
