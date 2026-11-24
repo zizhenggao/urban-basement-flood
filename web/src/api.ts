@@ -80,6 +80,29 @@ export async function getWards(): Promise<Ward[]> {
   return res.json();
 }
 
+// Written by "311 service request/Dashboard/build_flood_requests_json.py".
+// wards[id][yearIndex][seasonIndex][typeIndex] is a count of finished requests.
+export type FloodRequests = {
+  source: string;
+  filter: string;
+  through: string;
+  years: number[];
+  seasons: string[];
+  types: string[];
+  total: number;
+  wards: Record<string, number[][][]>;
+};
+
+export async function getFloodRequests(): Promise<FloodRequests> {
+  const res = await fetch(`${import.meta.env.BASE_URL}flood_requests.json`);
+  if (!res.ok) return fail(res);
+  // A missing file can come back as the page itself, so check before parsing.
+  if (!(res.headers.get("content-type") ?? "").includes("json")) {
+    throw new Error("The flooding-request data is missing. Run build_flood_requests_json.py.");
+  }
+  return res.json();
+}
+
 export async function ask(question: string, model: string): Promise<AskResponse> {
   let res: Response;
   try {

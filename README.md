@@ -213,3 +213,30 @@ The model writes a draft that a person must review. It is a small model and can 
 | `ModuleNotFoundError` | Use `.venv/bin/python`, not the system `python` |
 
 The folder `rag/` and `requirements-rag.txt` are an experiment with embeddings and Chroma. The app does not use them.
+
+## Flooding requests by ward (map panel)
+
+The web page has two tabs. **Map** colours each ward by its total of finished flooding requests, 2019 to October 2026 (red is the most requests, blue the fewest; the numbers at the ends of the legend are the highest and lowest totals). The map no longer colours wards by outreach priority. That score is still calculated and used by the chat. Click a ward and the panel on the right draws two charts for it, from the City of Toronto 311 service requests:
+
+- **By season, 2019–2026 combined.** Four bars (winter, spring, summer, fall), stacked by request type.
+- **By season and year.** One bar per season of each year, so you can see how a ward changes over time.
+
+By default each ward uses its own vertical scale, so compare the numbers on the axis, not the bar heights. The **Scale** switch above the charts puts both charts on one axis shared by all 25 wards, which lets you compare wards; the choice is kept when you click another ward. Only finished requests count (`Closed` before 2022, `Completed` from 2022), and the last year is partial: the note under the charts says where the data stops. **Outreach agent** holds the chat.
+
+The page cannot read the yearly 311 files (about 475 MB), so a script summarises them into `web/public/flood_requests.json` (14 KB, kept in git). It reuses the filters of `311 service request/Dashboard/plot_flood_requests_by_season.py`, so the web charts and the notebook agree. Run it again when new 311 files arrive:
+
+```bash
+.venv/bin/python "311 service request/Dashboard/build_flood_requests_json.py"
+```
+
+It needs `matplotlib`, which is in `requirements.txt`. It prints the total (81,783 requests for 2019 to October 2026) and stops if the counts do not add up.
+
+To see the GitHub Pages version on your computer, build it and serve it under the same path (`npm run preview` alone serves from `/` and the page stays blank):
+
+```bash
+cd web
+GITHUB_PAGES=true npm run build
+npx vite preview --base /urban-basement-flood/
+```
+
+Open http://localhost:4173/urban-basement-flood/ with the API switched off. The map and the charts load. The chat does not answer there.
