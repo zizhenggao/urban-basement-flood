@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/build-wards.mjs",
     "dev": "vite",
     "prebuild": "node scripts/build-wards.mjs",
     "build": "tsc --noEmit && vite build",
