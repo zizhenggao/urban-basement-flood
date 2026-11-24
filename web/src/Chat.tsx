@@ -90,9 +90,9 @@ function summarize(r: AskResponse): string {
   return parts.join("\n\n");
 }
 
-type Props = { injected: { q: string; n: number } | null };
+type Props = { injected?: { q: string; n: number } | null };
 
-export default function Chat({ injected }: Props) {
+export default function Chat({ injected = null }: Props) {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [prompt, setPrompt] = useState("");
   const [busy, setBusy] = useState(false);
