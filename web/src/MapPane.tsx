@@ -27,7 +27,7 @@ export default function MapPane({ wards, stats, pinned, onPin }: Props) {
         <div style={{ flex: 1, minWidth: 240 }}>
           <h1 className="h" style={{ fontSize: 22 }}>Flooding service requests by ward</h1>
           <div style={{ fontSize: 14, color: "#4B5D6F" }}>
-            Finished 311 flooding requests in Toronto's 25 wards, 2019 to October 2026. Colour shows the total; the label is
+            311 flooding requests marked as done in Toronto's 25 wards, 2019 to October 2026. Colour shows the total; the label is
             the ward number. Click or tap a ward to see its requests by season and year.
           </div>
         </div>

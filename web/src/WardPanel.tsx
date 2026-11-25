@@ -259,7 +259,7 @@ export default function WardPanel({ ward, wardCount, data, stats, error }: Props
           xFont={11}
           showMonths
           xLabel={(i) => bySeason[i].label}
-          ariaLabel={`Finished flooding requests in ${name} by season, ${first} to ${last} combined: ${seasonSummary}.`}
+          ariaLabel={`Flooding requests marked as done in ${name} by season, ${first} to ${last} combined: ${seasonSummary}.`}
         />
         <h3 className="h" style={{ fontSize: 15, margin: "16px 0 2px" }}>By season and year</h3>
         <StackedBars
@@ -270,7 +270,7 @@ export default function WardPanel({ ward, wardCount, data, stats, error }: Props
           xFont={9}
           xLabel={(i) => SEASON_SHORT[i % data.seasons.length]}
           groups={groups}
-          ariaLabel={`Finished flooding requests in ${name} by season and year. Yearly totals: ${yearSummary}.`}
+          ariaLabel={`Flooding requests marked as done in ${name} by season and year. Yearly totals: ${yearSummary}.`}
         />
         <div className="note" style={{ marginTop: 2 }}>
           {SEASON_SHORT.map((short, i) => (
