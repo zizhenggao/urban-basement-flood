@@ -110,7 +110,7 @@ def main():
     latest = plots.read_requests(paths[-1])["Creation Date"].max()
     payload = {
         "source": "City of Toronto 311 service requests",
-        "filter": "Finished requests only (Closed before 2022, Completed from 2022)",
+        "filter": 'Only requests marked as done are counted (status "Closed" until 2021, "Completed" from 2022)',
         "through": str(latest)[:10],
         **payload,
     }

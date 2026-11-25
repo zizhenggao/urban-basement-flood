@@ -216,12 +216,12 @@ The folder `rag/` and `requirements-rag.txt` are an experiment with embeddings a
 
 ## Flooding requests by ward (map panel)
 
-The web page has two tabs. **Map** colours each ward by its total of finished flooding requests, 2019 to October 2026 (red is the most requests, blue the fewest; the numbers at the ends of the legend are the highest and lowest totals). The map no longer colours wards by outreach priority. That score is still calculated and used by the chat. Click a ward and the panel on the right draws two charts for it, from the City of Toronto 311 service requests:
+The web page shows the ward map. It colours each ward by its total of finished flooding requests, 2019 to October 2026 (red is the most requests, blue the fewest; the numbers at the ends of the legend are the highest and lowest totals). The map no longer colours wards by outreach priority. That score is still calculated and used by the chat. Click a ward and the panel on the right draws two charts for it, from the City of Toronto 311 service requests:
 
 - **By season, 2019–2026 combined.** Four bars (winter, spring, summer, fall), stacked by request type.
 - **By season and year.** One bar per season of each year, so you can see how a ward changes over time.
 
-By default each ward uses its own vertical scale, so compare the numbers on the axis, not the bar heights. The **Scale** switch above the charts puts both charts on one axis shared by all 25 wards, which lets you compare wards; the choice is kept when you click another ward. Only finished requests count (`Closed` before 2022, `Completed` from 2022), and the last year is partial: the note under the charts says where the data stops. **Outreach agent** holds the chat.
+Each ward uses its own vertical scale, so compare the numbers on the axis, not the bar heights. Only finished requests count (`Closed` before 2022, `Completed` from 2022), and the last year is partial: the note under the charts says where the data stops. The Outreach agent (the chat) is hidden for the demo and nothing was deleted: set `SHOW_AGENT` to `true` in `web/src/config.ts` to bring back its tab. The chat needs the API and Ollama running on your computer.
 
 The page cannot read the yearly 311 files (about 475 MB), so a script summarises them into `web/public/flood_requests.json` (14 KB, kept in git). It reuses the filters of `311 service request/Dashboard/plot_flood_requests_by_season.py`, so the web charts and the notebook agree. Run it again when new 311 files arrive:
 

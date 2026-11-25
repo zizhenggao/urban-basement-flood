@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { FloodRequests, Ward } from "./api";
 import { colorForValue, textColorForValue } from "./colors";
 import type { RequestStats } from "./requests";
@@ -6,6 +6,9 @@ import type { RequestStats } from "./requests";
 // The same six colours as the notebook charts, in the order of the request types.
 const TYPE_COLORS = ["#4C78A8", "#F58518", "#54A24B", "#E45756", "#72B7B2", "#B279A2"];
 const SEASON_SHORT = ["W", "Sp", "Su", "F"];
+// The months of each season, as plot_flood_requests_by_season.py assigns them (December sits
+// with January and February of its own year, not with the next year).
+const SEASON_MONTHS = ["Dec, Jan, Feb", "Mar, Apr, May", "Jun, Jul, Aug", "Sep, Oct, Nov"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 const n = (value: number) => value.toLocaleString("en-CA");
@@ -23,30 +26,7 @@ function niceTicks(max: number, target = 4): number[] {
   return ticks;
 }
 
-// Top tick of the axis for a given maximum, e.g. 1,740 becomes 2,000.
-const axisTop = (max: number) => niceTicks(max).slice(-1)[0];
-
-// The tallest bar of each chart over all wards, for the shared scale.
-function commonMaxima(data: FloodRequests): { season: number; year: number } {
-  let season = 0;
-  let year = 0;
-  for (const table of Object.values(data.wards)) {
-    for (let s = 0; s < data.seasons.length; s++) {
-      let acrossYears = 0;
-      for (const y of table) {
-        const total = y[s].reduce((a, v) => a + v, 0);
-        acrossYears += total;
-        if (total > year) year = total;
-      }
-      if (acrossYears > season) season = acrossYears;
-    }
-  }
-  return { season, year };
-}
-
-type Scale = "ward" | "all";
-
-type Bar = { label: string; values: number[] };
+type Bar = { label: string; values: number[]; months?: string };
 type Group = { label: string; sub?: string; size: number };
 
 type ChartProps = {
@@ -58,21 +38,21 @@ type ChartProps = {
   xLabel: (index: number) => string;
   xFont: number;
   groups?: Group[];
-  maxValue?: number;
+  // Draw each bar's months in a second, smaller line under its label.
+  showMonths?: boolean;
 };
 
-// One bar per entry, stacked by request type. The vertical scale fits these bars,
-// unless maxValue is given (the shared scale for all wards).
-function StackedBars({ bars, types, width, height, ariaLabel, xLabel, xFont, groups, maxValue }: ChartProps) {
+// One bar per entry, stacked by request type. The vertical scale fits these bars only.
+function StackedBars({ bars, types, width, height, ariaLabel, xLabel, xFont, groups, showMonths }: ChartProps) {
   const [hovered, setHovered] = useState<number | null>(null);
-  const margin = { left: 44, right: 8, top: 8, bottom: groups ? 46 : 26 };
+  const margin = { left: 44, right: 8, top: 8, bottom: groups ? 46 : showMonths ? 42 : 26 };
   const plotW = width - margin.left - margin.right;
   const plotH = height - margin.top - margin.bottom;
   const slot = plotW / bars.length;
   const barW = slot * (groups ? 0.74 : 0.62);
 
   const totals = bars.map((b) => b.values.reduce((a, v) => a + v, 0));
-  const ticks = niceTicks(maxValue ?? Math.max(...totals));
+  const ticks = niceTicks(Math.max(...totals));
   const topTick = ticks[ticks.length - 1];
   const y = (v: number) => margin.top + plotH - (v / topTick) * plotH;
 
@@ -128,6 +108,11 @@ function StackedBars({ bars, types, width, height, ariaLabel, xLabel, xFont, gro
             <text x={x0 + slot / 2} y={margin.top + plotH + 4 + xFont} textAnchor="middle" fontSize={xFont} fill="#12263A">
               {xLabel(i)}
             </text>
+            {showMonths && bar.months && (
+              <text x={x0 + slot / 2} y={margin.top + plotH + 4 + xFont + 13} textAnchor="middle" fontSize={9.5} fill="#4B5D6F">
+                {bar.months}
+              </text>
+            )}
           </g>
         );
       })}
@@ -169,7 +154,10 @@ function StackedBars({ bars, types, width, height, ariaLabel, xLabel, xFont, gro
           pointerEvents: "none",
         }}
       >
-        <div style={{ fontWeight: 700 }}>{bars[hovered].label}</div>
+        <div style={{ fontWeight: 700 }}>
+          {bars[hovered].label}
+          {bars[hovered].months ? ` (${bars[hovered].months})` : ""}
+        </div>
         <div style={{ marginBottom: 4 }}>{n(totals[hovered])} requests</div>
         {tipRows.map(({ v, t }) => (
           <div key={t} style={{ display: "flex", alignItems: "flex-start", gap: 6 }}>
@@ -215,9 +203,6 @@ type Props = {
 };
 
 export default function WardPanel({ ward, wardCount, data, stats, error }: Props) {
-  // Kept here, and the panel stays mounted, so the choice survives clicking another ward.
-  const [scale, setScale] = useState<Scale>("ward");
-  const common = useMemo(() => (data ? commonMaxima(data) : null), [data]);
   let body: JSX.Element;
 
   if (error) {
@@ -242,10 +227,11 @@ export default function WardPanel({ ward, wardCount, data, stats, error }: Props
 
     const bySeason: Bar[] = data.seasons.map((season, s) => ({
       label: season,
+      months: SEASON_MONTHS[s],
       values: data.types.map((_, t) => table.reduce((acc, year) => acc + year[s][t], 0)),
     }));
     const byYear: Bar[] = data.years.flatMap((year, i) =>
-      data.seasons.map((season, s) => ({ label: `${season} ${year}`, values: table[i][s] })),
+      data.seasons.map((season, s) => ({ label: `${season} ${year}`, months: SEASON_MONTHS[s], values: table[i][s] })),
     );
 
     const month = Number(data.through.slice(5, 7));
@@ -262,30 +248,17 @@ export default function WardPanel({ ward, wardCount, data, stats, error }: Props
       .join(", ");
     const name = `Ward ${ward.ward_id} ${ward.ward_name}`;
 
-    const shared = scale === "all" && common ? common : null;
-    const hint = shared
-      ? `Same axis for all ${Object.keys(data.wards).length} wards, so wards can be compared (up to ${n(axisTop(shared.season))} and ${n(axisTop(shared.year))}).`
-      : "Each chart fits this ward's own numbers.";
-
     body = (
       <>
-        <div className="seg-row">
-          <span className="lab" id="scale-label">Scale</span>
-          <div className="seg" role="group" aria-labelledby="scale-label">
-            <button type="button" aria-pressed={scale === "ward"} onClick={() => setScale("ward")}>This ward</button>
-            <button type="button" aria-pressed={scale === "all"} onClick={() => setScale("all")}>All wards</button>
-          </div>
-        </div>
-        <p className="note" style={{ margin: "0 0 10px" }}>{hint}</p>
         <h3 className="h" style={{ fontSize: 15, margin: "0 0 2px" }}>By season, {first}–{last} combined</h3>
         <StackedBars
           bars={bySeason}
           types={data.types}
           width={480}
-          height={210}
+          height={226}
           xFont={11}
+          showMonths
           xLabel={(i) => bySeason[i].label}
-          maxValue={shared?.season}
           ariaLabel={`Finished flooding requests in ${name} by season, ${first} to ${last} combined: ${seasonSummary}.`}
         />
         <h3 className="h" style={{ fontSize: 15, margin: "16px 0 2px" }}>By season and year</h3>
@@ -297,10 +270,20 @@ export default function WardPanel({ ward, wardCount, data, stats, error }: Props
           xFont={9}
           xLabel={(i) => SEASON_SHORT[i % data.seasons.length]}
           groups={groups}
-          maxValue={shared?.year}
           ariaLabel={`Finished flooding requests in ${name} by season and year. Yearly totals: ${yearSummary}.`}
         />
-        <div className="note" style={{ marginTop: 2 }}>W winter, Sp spring, Su summer, F fall</div>
+        <div className="note" style={{ marginTop: 2 }}>
+          {SEASON_SHORT.map((short, i) => (
+            <span key={short}>
+              {i > 0 && " · "}
+              <strong>{`${short} ${data.seasons[i].toLowerCase()}:`}</strong> {SEASON_MONTHS[i]}
+            </span>
+          ))}
+          . December counts in the winter of its own year.
+        </div>
+        <p className="note" style={{ margin: "8px 0 0" }}>
+          Each ward's charts use their own vertical axis. Read the numbers on the axis when comparing wards.
+        </p>
         <div className="lab" style={{ marginTop: 12 }}>Request types</div>
         <Legend types={data.types} />
         <Note data={data} />
