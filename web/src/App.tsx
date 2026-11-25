@@ -5,6 +5,7 @@ import WardPanel from "./WardPanel";
 import { requestStats } from "./requests";
 import Chat from "./Chat";
 import About from "./About";
+import { SHOW_AGENT } from "./config";
 
 type Tab = "map" | "agent";
 
@@ -45,28 +46,30 @@ export default function App() {
           <span className="h" style={{ color: "#fff", fontSize: 20 }}>Stop the Flood</span>
           <span className="hidesm" style={{ color: "#C9D8E4", fontSize: 14 }}>Basement flooding outreach assistant</span>
         </div>
-        <div className="tabs" role="tablist" aria-label="Sections">
-          <button
-            className="tab"
-            role="tab"
-            id="tab-map"
-            aria-selected={tab === "map"}
-            aria-controls="panel-map"
-            onClick={() => setTab("map")}
-          >
-            Map
-          </button>
-          <button
-            className="tab"
-            role="tab"
-            id="tab-agent"
-            aria-selected={tab === "agent"}
-            aria-controls="panel-agent"
-            onClick={() => setTab("agent")}
-          >
-            Outreach agent
-          </button>
-        </div>
+        {SHOW_AGENT && (
+          <div className="tabs" role="tablist" aria-label="Sections">
+            <button
+              className="tab"
+              role="tab"
+              id="tab-map"
+              aria-selected={tab === "map"}
+              aria-controls="panel-map"
+              onClick={() => setTab("map")}
+            >
+              Map
+            </button>
+            <button
+              className="tab"
+              role="tab"
+              id="tab-agent"
+              aria-selected={tab === "agent"}
+              aria-controls="panel-agent"
+              onClick={() => setTab("agent")}
+            >
+              Outreach agent
+            </button>
+          </div>
+        )}
         <span className="pill" style={{ background: "#FFD978", color: "#0B2545" }}>PRELIMINARY</span>
         <button className="btn" style={{ minHeight: 40, background: "transparent", color: "#fff", borderColor: "#6F8FAF" }} onClick={() => setAbout(true)}>
           About and limits
@@ -74,20 +77,28 @@ export default function App() {
       </header>
 
       <main className="body">
-        <div className="tabpanel" id="panel-map" role="tabpanel" aria-labelledby="tab-map" hidden={tab !== "map"}>
+        <div
+          className="tabpanel"
+          id="panel-map"
+          role={SHOW_AGENT ? "tabpanel" : undefined}
+          aria-labelledby={SHOW_AGENT ? "tab-map" : undefined}
+          hidden={tab !== "map"}
+        >
           {wards ? (
             <MapPane wards={wards} stats={stats} pinned={pinned} onPin={setPinned} />
           ) : (
-            <section className="mapcol" aria-label="Flood risk priority map">
+            <section className="mapcol" aria-label="Flooding service requests map">
               {error ? <div className="errbox">{error}</div> : <div className="note">Loading wards…</div>}
             </section>
           )}
           <WardPanel ward={selected} wardCount={wards?.length ?? 25} data={flood} stats={stats} error={floodError} />
         </div>
         {/* The chat stays mounted while hidden, so the conversation is not lost when switching tabs. */}
-        <div className="tabpanel agentview" id="panel-agent" role="tabpanel" aria-labelledby="tab-agent" hidden={tab !== "agent"}>
-          <Chat />
-        </div>
+        {SHOW_AGENT && (
+          <div className="tabpanel agentview" id="panel-agent" role="tabpanel" aria-labelledby="tab-agent" hidden={tab !== "agent"}>
+            <Chat />
+          </div>
+        )}
       </main>
 
       {about && <About onClose={() => setAbout(false)} />}
